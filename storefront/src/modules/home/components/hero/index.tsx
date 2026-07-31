@@ -1,5 +1,6 @@
-import { Github } from "@medusajs/icons"
-import { Button, Heading } from "@medusajs/ui"
+import { Heading } from "@medusajs/ui"
+import LocalizedClientLink from "@modules/common/components/localized-client-link"
+import StorePickupLink from "../store-pickup-link"
 
 const Hero = () => {
   return (
@@ -27,6 +28,21 @@ const Hero = () => {
             Visit the tutorial
           </h1>
         </a>
+        <div className="flex flex-wrap items-center justify-center gap-4 text-sm">
+          <StorePickupLink className="rounded-full border border-[var(--surface-border)] px-4 py-2 hover:bg-ui-bg-subtle" />
+          <LocalizedClientLink
+            href="/editors-pick"
+            className="rounded-full border border-[var(--surface-border)] px-4 py-2 hover:bg-ui-bg-subtle"
+          >
+            Editor&apos;s Pick
+          </LocalizedClientLink>
+          <LocalizedClientLink
+            href="/todays-deals"
+            className="rounded-full border border-[var(--surface-border)] px-4 py-2 hover:bg-ui-bg-subtle"
+          >
+            Today&apos;s Deals
+          </LocalizedClientLink>
+        </div>
       </div>
     </div>
   )

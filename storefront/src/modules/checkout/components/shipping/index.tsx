@@ -24,6 +24,7 @@ const Shipping: React.FC<ShippingProps> = ({
 }) => {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [locationConfirmed, setLocationConfirmed] = useState(false)
 
   const searchParams = useSearchParams()
   const router = useRouter()
@@ -59,8 +60,22 @@ const Shipping: React.FC<ShippingProps> = ({
     setError(null)
   }, [isOpen])
 
+  useEffect(() => {
+    const hasAddress = Boolean(cart?.shipping_address?.address_1)
+
+    if (typeof window === "undefined") {
+      setLocationConfirmed(hasAddress)
+      return
+    }
+
+    const hasConfirmedLocation =
+      sessionStorage.getItem("checkout_location_confirmed") === "true"
+
+    setLocationConfirmed(hasAddress || hasConfirmedLocation)
+  }, [cart?.shipping_address?.address_1])
+
   return (
-    <div className="bg-white">
+    <div className="bg-[var(--surface-card)]">
       <div className="flex flex-row items-center justify-between mb-6">
         <Heading
           level="h2"
@@ -94,39 +109,43 @@ const Shipping: React.FC<ShippingProps> = ({
       </div>
       {isOpen ? (
         <div data-testid="delivery-options-container">
-          <div className="pb-8">
-            <RadioGroup value={selectedShippingMethod?.id} onChange={set}>
-              {availableShippingMethods?.map((option) => {
-                return (
-                  <RadioGroup.Option
-                    key={option.id}
-                    value={option.id}
-                    data-testid="delivery-option-radio"
-                    className={clx(
-                      "flex items-center justify-between text-small-regular cursor-pointer py-4 border rounded-rounded px-8 mb-2 hover:shadow-borders-interactive-with-active",
-                      {
-                        "border-ui-border-interactive":
-                          option.id === selectedShippingMethod?.id,
-                      }
-                    )}
-                  >
-                    <div className="flex items-center gap-x-4">
-                      <Radio
-                        checked={option.id === selectedShippingMethod?.id}
-                      />
-                      <span className="text-base-regular">{option.name}</span>
-                    </div>
-                    <span className="justify-self-end text-ui-fg-base">
-                      {convertToLocale({
-                        amount: option.amount!,
-                        currency_code: cart?.currency_code,
-                      })}
-                    </span>
-                  </RadioGroup.Option>
-                )
-              })}
-            </RadioGroup>
-          </div>
+          {!locationConfirmed ? (
+            <Text className="txt-medium text-ui-fg-subtle">
+              Confirm your location in the address step to authenticate delivery options.
+            </Text>
+          ) : (
+            <div className="pb-8">
+              <RadioGroup value={selectedShippingMethod?.id} onChange={set}>
+                {availableShippingMethods?.map((option) => {
+                  return (
+                    <RadioGroup.Option
+                      key={option.id}
+                      value={option.id}
+                      data-testid="delivery-option-radio"
+                      className={clx(
+                        "flex items-center justify-between text-small-regular cursor-pointer py-4 border rounded-rounded px-8 mb-2 hover:shadow-borders-interactive-with-active",
+                        {
+                          "border-ui-border-interactive":
+                            option.id === selectedShippingMethod?.id,
+                        }
+                      )}
+                    >
+                      <div className="flex items-center gap-x-4">
+                        <Radio checked={option.id === selectedShippingMethod?.id} />
+                        <span className="text-base-regular">{option.name}</span>
+                      </div>
+                      <span className="justify-self-end text-ui-fg-base">
+                        {convertToLocale({
+                          amount: option.amount!,
+                          currency_code: cart?.currency_code,
+                        })}
+                      </span>
+                    </RadioGroup.Option>
+                  )
+                })}
+              </RadioGroup>
+            </div>
+          )}
 
           <ErrorMessage
             error={error}
@@ -138,7 +157,7 @@ const Shipping: React.FC<ShippingProps> = ({
             className="mt-6"
             onClick={handleSubmit}
             isLoading={isLoading}
-            disabled={!cart.shipping_methods?.[0]}
+            disabled={!locationConfirmed || !cart.shipping_methods?.[0]}
             data-testid="submit-delivery-option-button"
           >
             Continue to payment

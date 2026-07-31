@@ -15,12 +15,14 @@ type Params = {
   searchParams: {
     sortBy?: SortOptions
     page?: string
+    tag?: string
+    category?: string
   }
 }
 
 export default async function SearchResults({ params, searchParams }: Params) {
   const { query } = params
-  const { sortBy, page } = searchParams
+  const { sortBy, page, tag, category } = searchParams
 
   const hits = await search(query).then((data) => data)
 
@@ -36,6 +38,8 @@ export default async function SearchResults({ params, searchParams }: Params) {
       ids={ids}
       sortBy={sortBy}
       page={page}
+      tag={tag}
+      category={category}
       countryCode={params.countryCode}
     />
   )

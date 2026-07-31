@@ -2,6 +2,43 @@
 @import "tailwindcss/components";
 @import "tailwindcss/utilities";
 
+:root {
+  --app-bg: #f5f7fb;
+  --app-fg: #111827;
+  --surface: rgba(255, 255, 255, 0.9);
+  --surface-card: #ffffff;
+  --surface-border: #dbe2ea;
+}
+
+@media (prefers-color-scheme: dark) {
+  html:not(.light):not(.dark) {
+    --app-bg: #0b1220;
+    --app-fg: #e5e7eb;
+    --surface: rgba(15, 23, 42, 0.86);
+    --surface-card: #111a2b;
+    --surface-border: #2b3953;
+    color-scheme: dark;
+  }
+}
+
+html.light {
+  --app-bg: #f5f7fb;
+  --app-fg: #111827;
+  --surface: rgba(255, 255, 255, 0.9);
+  --surface-card: #ffffff;
+  --surface-border: #dbe2ea;
+  color-scheme: light;
+}
+
+html.dark {
+  --app-bg: #0b1220;
+  --app-fg: #e5e7eb;
+  --surface: rgba(15, 23, 42, 0.86);
+  --surface-card: #111a2b;
+  --surface-border: #2b3953;
+  color-scheme: dark;
+}
+
 @layer utilities {
   /* Chrome, Safari and Opera */
   .no-scrollbar::-webkit-scrollbar {
@@ -35,9 +72,9 @@
   select:-webkit-autofill,
   select:-webkit-autofill:hover,
   select:-webkit-autofill:focus {
-    border: 1px solid #212121;
-    -webkit-text-fill-color: #212121;
-    -webkit-box-shadow: 0 0 0px 1000px #fff inset;
+    border: 1px solid var(--surface-border);
+    -webkit-text-fill-color: var(--app-fg);
+    -webkit-box-shadow: 0 0 0px 1000px var(--surface-card) inset;
     transition: background-color 5000s ease-in-out 0s;
   }
 

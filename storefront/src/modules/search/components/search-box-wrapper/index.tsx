@@ -50,7 +50,7 @@ const SearchBoxWrapper = ({
 
   const onSubmit = () => {
     if (value) {
-      router.push(`/results/${value}`)
+      router.push(`/results/${encodeURIComponent(value.trim())}`)
     }
   }
 

@@ -1,24 +1,21 @@
 import { HttpTypes } from "@medusajs/types"
 import { Container } from "@medusajs/ui"
-import Checkbox from "@modules/common/components/checkbox"
 import Input from "@modules/common/components/input"
 import { mapKeys } from "lodash"
-import React, { useEffect, useMemo, useState } from "react"
+import React, { useCallback, useEffect, useMemo, useState } from "react"
 import AddressSelect from "../address-select"
-import CountrySelect from "../country-select"
+import LocationMap from "../location-map"
 
 const ShippingAddress = ({
   customer,
   cart,
-  checked,
-  onChange,
 }: {
   customer: HttpTypes.StoreCustomer | null
   cart: HttpTypes.StoreCart | null
-  checked: boolean
-  onChange: () => void
 }) => {
   const [formData, setFormData] = useState<Record<string, any>>({})
+
+  const mapsKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY
 
   const countriesInRegion = useMemo(
     () => cart?.region?.countries?.map((c) => c.iso_2),
@@ -34,7 +31,7 @@ const ShippingAddress = ({
     [customer?.addresses, countriesInRegion]
   )
 
-  const setFormAddress = (
+  const setFormAddress = useCallback((
     address?: HttpTypes.StoreCartAddress,
     email?: string
   ) => {
@@ -44,12 +41,15 @@ const ShippingAddress = ({
         "shipping_address.first_name": address?.first_name || "",
         "shipping_address.last_name": address?.last_name || "",
         "shipping_address.address_1": address?.address_1 || "",
-        "shipping_address.company": address?.company || "",
         "shipping_address.postal_code": address?.postal_code || "",
         "shipping_address.city": address?.city || "",
-        "shipping_address.country_code": address?.country_code || "",
-        "shipping_address.province": address?.province || "",
+        "shipping_address.country_code":
+          address?.country_code?.toUpperCase() ||
+          cart?.region?.countries?.[0]?.iso_2?.toUpperCase() ||
+          "",
         "shipping_address.phone": address?.phone || "",
+        "location.lat": prevState["location.lat"] || "",
+        "location.lng": prevState["location.lng"] || "",
       }))
 
     email &&
@@ -57,10 +57,11 @@ const ShippingAddress = ({
         ...prevState,
         email: email,
       }))
-  }
+  }, [cart?.region?.countries])
 
   useEffect(() => {
-    // Ensure cart is not null and has a shipping_address before setting form data
+    const defaultCountry = cart?.region?.countries?.[0]?.iso_2?.toUpperCase() || ""
+
     if (cart && cart.shipping_address) {
       setFormAddress(cart?.shipping_address, cart?.email)
     }
@@ -68,7 +69,36 @@ const ShippingAddress = ({
     if (cart && !cart.email && customer?.email) {
       setFormAddress(undefined, customer.email)
     }
-  }, [cart]) // Add cart as a dependency
+
+    if (!cart?.shipping_address) {
+      setFormData((prevState) => ({
+        ...prevState,
+        "shipping_address.country_code":
+          prevState["shipping_address.country_code"] || defaultCountry,
+      }))
+    }
+
+    if (typeof window !== "undefined") {
+      const isPickup = sessionStorage.getItem("store_pickup_selected") === "true"
+      if (isPickup) {
+        const now = {
+          lat: -15.3875,
+          lng: 28.3228,
+        }
+
+        setFormData((prevState) => ({
+          ...prevState,
+          "shipping_address.address_1": "Store Pickup",
+          "shipping_address.city": prevState["shipping_address.city"] || "Lusaka",
+          "shipping_address.postal_code":
+            prevState["shipping_address.postal_code"] || "10101",
+          "location.lat": String(now.lat),
+          "location.lng": String(now.lng),
+        }))
+        sessionStorage.setItem("checkout_location_confirmed", "true")
+      }
+    }
+  }, [cart, customer?.email, setFormAddress])
 
   const handleChange = (
     e: React.ChangeEvent<
@@ -80,6 +110,40 @@ const ShippingAddress = ({
       [e.target.name]: e.target.value,
     })
   }
+
+  const onResolveLocation = (
+    location: { lat: number; lng: number },
+    address: {
+      formattedAddress: string
+      city: string
+      postalCode: string
+      countryCode: string
+    }
+  ) => {
+    setFormData((prevState) => ({
+      ...prevState,
+      "shipping_address.address_1": address.formattedAddress,
+      "shipping_address.city": address.city,
+      "shipping_address.postal_code": address.postalCode,
+      "shipping_address.country_code": address.countryCode,
+      "location.lat": String(location.lat),
+      "location.lng": String(location.lng),
+    }))
+
+    if (typeof window !== "undefined") {
+      sessionStorage.setItem("checkout_location_confirmed", "true")
+      sessionStorage.setItem("checkout_location_lat", String(location.lat))
+      sessionStorage.setItem("checkout_location_lng", String(location.lng))
+    }
+  }
+
+  const currentLocation =
+    formData["location.lat"] && formData["location.lng"]
+      ? {
+          lat: Number(formData["location.lat"]),
+          lng: Number(formData["location.lng"]),
+        }
+      : null
 
   return (
     <>
@@ -118,70 +182,18 @@ const ShippingAddress = ({
           required
           data-testid="shipping-last-name-input"
         />
-        <Input
-          label="Address"
-          name="shipping_address.address_1"
-          autoComplete="address-line1"
-          value={formData["shipping_address.address_1"]}
-          onChange={handleChange}
-          required
-          data-testid="shipping-address-input"
-        />
-        <Input
-          label="Company"
-          name="shipping_address.company"
-          value={formData["shipping_address.company"]}
-          onChange={handleChange}
-          autoComplete="organization"
-          data-testid="shipping-company-input"
-        />
-        <Input
-          label="Postal code"
-          name="shipping_address.postal_code"
-          autoComplete="postal-code"
-          value={formData["shipping_address.postal_code"]}
-          onChange={handleChange}
-          required
-          data-testid="shipping-postal-code-input"
-        />
-        <Input
-          label="City"
-          name="shipping_address.city"
-          autoComplete="address-level2"
-          value={formData["shipping_address.city"]}
-          onChange={handleChange}
-          required
-          data-testid="shipping-city-input"
-        />
-        <CountrySelect
-          name="shipping_address.country_code"
-          autoComplete="country"
-          region={cart?.region}
-          value={formData["shipping_address.country_code"]}
-          onChange={handleChange}
-          required
-          data-testid="shipping-country-select"
-        />
-        <Input
-          label="State / Province"
-          name="shipping_address.province"
-          autoComplete="address-level1"
-          value={formData["shipping_address.province"]}
-          onChange={handleChange}
-          required
-          data-testid="shipping-province-input"
-        />
       </div>
-      <div className="my-8">
-        <Checkbox
-          label="Billing address same as shipping address"
-          name="same_as_billing"
-          checked={checked}
-          onChange={onChange}
-          data-testid="billing-address-checkbox"
+
+      <div className="mt-4 grid grid-cols-2 gap-4">
+        <Input
+          label="Phone"
+          name="shipping_address.phone"
+          autoComplete="tel"
+          value={formData["shipping_address.phone"]}
+          onChange={handleChange}
+          required
+          data-testid="shipping-phone-input"
         />
-      </div>
-      <div className="grid grid-cols-2 gap-4 mb-4">
         <Input
           label="Email"
           name="email"
@@ -190,18 +202,40 @@ const ShippingAddress = ({
           autoComplete="email"
           value={formData.email}
           onChange={handleChange}
-          required
           data-testid="shipping-email-input"
         />
-        <Input
-          label="Phone"
-          name="shipping_address.phone"
-          autoComplete="tel"
-          value={formData["shipping_address.phone"]}
-          onChange={handleChange}
-          data-testid="shipping-phone-input"
-        />
       </div>
+
+      <LocationMap
+        apiKey={mapsKey}
+        location={currentLocation}
+        onResolveLocation={onResolveLocation}
+      />
+
+      <input
+        type="hidden"
+        name="shipping_address.address_1"
+        value={formData["shipping_address.address_1"] || ""}
+      />
+      <input
+        type="hidden"
+        name="shipping_address.city"
+        value={formData["shipping_address.city"] || ""}
+      />
+      <input
+        type="hidden"
+        name="shipping_address.postal_code"
+        value={formData["shipping_address.postal_code"] || ""}
+      />
+      <input
+        type="hidden"
+        name="shipping_address.country_code"
+        value={formData["shipping_address.country_code"] || ""}
+      />
+      <input type="hidden" name="location.lat" value={formData["location.lat"] || ""} />
+      <input type="hidden" name="location.lng" value={formData["location.lng"] || ""} />
+
+      <input type="hidden" name="same_as_billing" value="on" data-testid="billing-address-checkbox" />
     </>
   )
 }

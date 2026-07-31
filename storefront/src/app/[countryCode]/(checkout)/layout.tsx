@@ -1,6 +1,7 @@
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import ChevronDown from "@modules/common/icons/chevron-down"
 import MedusaCTA from "@modules/layout/components/medusa-cta"
+import ThemeToggle from "@modules/layout/components/theme-toggle"
 
 export default function CheckoutLayout({
   children,
@@ -8,8 +9,8 @@ export default function CheckoutLayout({
   children: React.ReactNode
 }) {
   return (
-    <div className="w-full bg-white relative small:min-h-screen">
-      <div className="h-16 bg-white border-b ">
+    <div className="w-full bg-[var(--app-bg)] relative small:min-h-screen">
+      <div className="h-16 border-b border-[var(--surface-border)] bg-[var(--surface)] backdrop-blur">
         <nav className="flex h-full items-center content-container justify-between">
           <LocalizedClientLink
             href="/cart"
@@ -31,7 +32,9 @@ export default function CheckoutLayout({
           >
             Medusa Store
           </LocalizedClientLink>
-          <div className="flex-1 basis-0" />
+          <div className="flex-1 basis-0 flex justify-end">
+            <ThemeToggle />
+          </div>
         </nav>
       </div>
       <div className="relative" data-testid="checkout-container">{children}</div>

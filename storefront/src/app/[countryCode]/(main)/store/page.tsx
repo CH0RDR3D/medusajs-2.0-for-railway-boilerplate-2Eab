@@ -12,6 +12,8 @@ type Params = {
   searchParams: {
     sortBy?: SortOptions
     page?: string
+    tag?: string
+    category?: string
   }
   params: {
     countryCode: string
@@ -19,12 +21,14 @@ type Params = {
 }
 
 export default async function StorePage({ searchParams, params }: Params) {
-  const { sortBy, page } = searchParams
+  const { sortBy, page, tag, category } = searchParams
 
   return (
     <StoreTemplate
       sortBy={sortBy}
       page={page}
+      tag={tag}
+      category={category}
       countryCode={params.countryCode}
     />
   )

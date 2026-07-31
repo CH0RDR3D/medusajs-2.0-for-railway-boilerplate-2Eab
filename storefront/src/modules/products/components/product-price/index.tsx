@@ -15,6 +15,17 @@ export default function ProductPrice({
     variantId: variant?.id,
   })
 
+  const requiresExplicitVariant = (product.variants?.length ?? 0) > 1
+  if (requiresExplicitVariant && !variant) {
+    return (
+      <div className="flex flex-col text-ui-fg-base">
+        <span className="text-base-regular text-ui-fg-subtle" data-testid="product-price-prompt">
+          Select a variant to view price
+        </span>
+      </div>
+    )
+  }
+
   const selectedPrice = variant ? variantPrice : cheapestPrice
 
   if (!selectedPrice) {

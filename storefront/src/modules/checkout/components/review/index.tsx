@@ -4,6 +4,7 @@ import { Heading, Text, clx } from "@medusajs/ui"
 
 import PaymentButton from "../payment-button"
 import { useSearchParams } from "next/navigation"
+import { useMemo } from "react"
 
 const Review = ({ cart }: { cart: any }) => {
   const searchParams = useSearchParams()
@@ -13,13 +14,22 @@ const Review = ({ cart }: { cart: any }) => {
   const paidByGiftcard =
     cart?.gift_cards && cart?.gift_cards?.length > 0 && cart?.total === 0
 
+  const hasLocation = useMemo(() => {
+    if (typeof window === "undefined") {
+      return Boolean(cart?.shipping_address?.address_1)
+    }
+
+    return sessionStorage.getItem("checkout_location_confirmed") === "true"
+  }, [cart?.shipping_address?.address_1])
+
   const previousStepsCompleted =
     cart.shipping_address &&
+    hasLocation &&
     cart.shipping_methods.length > 0 &&
     (cart.payment_collection || paidByGiftcard)
 
   return (
-    <div className="bg-white">
+    <div className="bg-[var(--surface-card)]">
       <div className="flex flex-row items-center justify-between mb-6">
         <Heading
           level="h2"
