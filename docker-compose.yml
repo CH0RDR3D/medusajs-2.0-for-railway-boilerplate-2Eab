@@ -10,11 +10,11 @@
 # the services defined here - uncomment them in backend/.env to enable
 # S3 file storage and search locally.
 
-name: medusa-railway-boilerplate
+name: SYA Store
 
 services:
   postgres:
-    image: postgres:17-alpine
+    image: postgres:18-alpine
     restart: unless-stopped
     environment:
       POSTGRES_USER: postgres
