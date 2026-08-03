@@ -46,6 +46,20 @@ export default function ProductActions({
     }
   }, [product.variants])
 
+  // Track client-side click counts for trending products curation
+  useEffect(() => {
+    if (product?.id) {
+      try {
+        const storedClicks = localStorage.getItem("shadystore-product-clicks")
+        const clicks = storedClicks ? JSON.parse(storedClicks) : {}
+        clicks[product.id] = (clicks[product.id] || 0) + 1
+        localStorage.setItem("shadystore-product-clicks", JSON.stringify(clicks))
+      } catch (e) {
+        console.error("Failed to track product click", e)
+      }
+    }
+  }, [product?.id])
+
   const selectedVariant = useMemo(() => {
     if (!product.variants || product.variants.length === 0) {
       return

@@ -13,7 +13,7 @@ const SideMenuItems = {
   Home: "/",
   Store: "/store",
   "Editor's Pick": "/editors-pick",
-  "Today's Deals": "/todays-deals",
+  "Today's Deals": "/deals",
   Search: "/search",
   Account: "/account",
   Cart: "/cart",

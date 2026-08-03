@@ -7,7 +7,12 @@ export const metadata: Metadata = {
   description: "Browse our curated product collections.",
 }
 
-export default async function CollectionsIndexPage() {
+type Props = {
+  params: Promise<{ countryCode: string }>
+}
+
+export default async function CollectionsIndexPage(props: Props) {
+  const params = await props.params
   const { collections } = await listCollections({ fields: "*products" })
 
   return <AllCollectionsTemplate collections={collections ?? []} />

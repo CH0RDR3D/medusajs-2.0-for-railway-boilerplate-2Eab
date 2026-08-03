@@ -40,7 +40,7 @@ export default function NavCategories({ categories }: NavCategoriesProps) {
 
       {/* Deals highlight link */}
       <Link
-        href="/store"
+        href="/deals"
         className="
           flex-shrink-0 px-3 py-1 text-xs font-semibold rounded-md
           text-amber-500 hover:text-amber-400
