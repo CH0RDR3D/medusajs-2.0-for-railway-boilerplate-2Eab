@@ -1,37 +1,45 @@
 import { Metadata } from "next"
-
-import FeaturedProducts from "@modules/home/components/featured-products"
-import Hero from "@modules/home/components/hero"
-import { getCollectionsWithProducts } from "@lib/data/collections"
+import { listCategories } from "@lib/data/categories"
+import { getProductsList } from "@lib/data/products"
 import { getRegion } from "@lib/data/regions"
+import CustomHomeLayout from "@modules/home/components/custom-home"
+import { shuffle } from "lodash"
+
+export const revalidate = 0
+
 
 export const metadata: Metadata = {
-  title: "Medusa Next.js Starter Template",
+  title: "eStorefront - A BLVCK Inc. Ecommerce Site",
   description:
-    "A performant frontend ecommerce starter template with Next.js 14 and Medusa.",
+    "A Blvck Inc. Store crafted to showcase products beautifully, built for performance and customer delight.",
 }
 
-export default async function Home({
-  params,
-}: {
+export default async function Home(props: {
   params: Promise<{ countryCode: string }>
 }) {
-  const { countryCode } = await params
-  const collections = await getCollectionsWithProducts(countryCode)
-  const region = await getRegion(countryCode)
+  const params = await props.params
+  const { countryCode } = params
 
-  if (!collections || !region) {
+  const region = await getRegion(countryCode)
+  if (!region) {
     return null
   }
 
+  // Fetch categories and products from Medusa backend
+  const categories = await listCategories()
+  const { response: { products } } = await getProductsList({
+    countryCode,
+    queryParams: { limit: 12 },
+  })
+
+  // Shuffle products so the homepage looks fresh on every load
+  const shuffledProducts = products ? shuffle(products) : []
+
   return (
-    <>
-      <Hero />
-      <div className="py-12">
-        <ul className="flex flex-col gap-x-6">
-          <FeaturedProducts collections={collections} region={region} />
-        </ul>
-      </div>
-    </>
+    <CustomHomeLayout
+      categories={categories || []}
+      products={shuffledProducts}
+      region={region}
+    />
   )
 }

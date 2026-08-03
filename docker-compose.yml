@@ -10,7 +10,7 @@
 # the services defined here - uncomment them in backend/.env to enable
 # S3 file storage and search locally.
 
-name: SYA Store
+name: sya-store
 
 services:
   postgres:

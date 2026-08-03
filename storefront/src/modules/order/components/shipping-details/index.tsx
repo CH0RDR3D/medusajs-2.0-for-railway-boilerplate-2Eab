@@ -67,6 +67,28 @@ const ShippingDetails = ({ order }: ShippingDetailsProps) => {
           </Text>
         </div>
       </div>
+
+      {order.metadata && (order.metadata as any).lat && (order.metadata as any).lng && (
+        <div className="mt-6 p-4 rounded-xl border border-[var(--surface-border)] bg-[var(--surface-card)] flex flex-col gap-2">
+          <Text className="txt-medium-plus text-ui-fg-base font-semibold">Delivery Location Tracking</Text>
+          <Text className="txt-medium text-ui-fg-subtle">
+            Your delivery location has been pinned at coordinates: {(order.metadata as any).lat}, {(order.metadata as any).lng}
+          </Text>
+          <a
+            href={`https://www.google.com/maps/search/?api=1&query=${(order.metadata as any).lat},${(order.metadata as any).lng}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-orange-500 hover:underline txt-medium-plus font-medium inline-flex items-center gap-1 mt-1"
+          >
+            <svg className="w-4 h-4 text-[#fd9706]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+            Track on Google Maps
+          </a>
+        </div>
+      )}
+
       <Divider className="mt-8" />
     </div>
   )

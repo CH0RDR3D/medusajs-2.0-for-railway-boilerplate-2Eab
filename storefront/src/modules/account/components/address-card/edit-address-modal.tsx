@@ -35,7 +35,6 @@ const EditAddress: React.FC<EditAddressProps> = ({
   const [formState, formAction] = useActionState(updateCustomerAddress, {
     success: false,
     error: null,
-    addressId: address.id,
   })
 
   const close = () => {
@@ -127,6 +126,7 @@ const EditAddress: React.FC<EditAddressProps> = ({
           <Heading className="mb-2">Edit address</Heading>
         </Modal.Title>
         <form action={formAction}>
+          <input type="hidden" name="addressId" value={address.id} />
           <Modal.Body>
             <div className="grid grid-cols-1 gap-y-2">
               <div className="grid grid-cols-2 gap-x-2">

@@ -1,5 +1,5 @@
 import { Dialog, Transition } from "@headlessui/react"
-import { clx } from "@medusajs/ui"
+import { clx } from "@modules/common/components/ui"
 import React, { Fragment } from "react"
 
 import { ModalProvider, useModal } from "@lib/context/modal-context"
@@ -65,7 +65,7 @@ const Modal = ({
                     "max-w-xl": size === "medium",
                     "max-w-3xl": size === "large",
                     "bg-transparent shadow-none": search,
-                    "bg-[var(--surface-card)] shadow-xl border border-[var(--surface-border)] rounded-rounded": !search,
+                    "bg-white shadow-xl border rounded-rounded": !search,
                   }
                 )}
               >

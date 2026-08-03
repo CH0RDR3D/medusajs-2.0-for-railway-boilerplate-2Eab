@@ -1,6 +1,7 @@
 import { getBaseURL } from "@lib/util/env"
 import { Metadata } from "next"
 import "styles/globals.css"
+import AuthProvider from "@modules/common/components/auth-provider"
 import ThemeProvider from "@modules/layout/components/theme-provider"
 
 export const metadata: Metadata = {
@@ -27,9 +28,11 @@ export default function RootLayout(props: { children: React.ReactNode }) {
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
       <body className="min-h-screen bg-[var(--app-bg)] text-[var(--app-fg)] transition-colors duration-300">
-        <ThemeProvider>
-          <main className="relative">{props.children}</main>
-        </ThemeProvider>
+        <AuthProvider>
+          <ThemeProvider>
+            <main className="relative">{props.children}</main>
+          </ThemeProvider>
+        </AuthProvider>
       </body>
     </html>
   )

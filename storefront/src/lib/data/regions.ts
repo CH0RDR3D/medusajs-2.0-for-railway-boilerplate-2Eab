@@ -1,48 +1,61 @@
+"use server"
+
 import { sdk } from "@lib/config"
-import medusaError from "@lib/util/medusa-error"
-import { cache } from "react"
 import { HttpTypes } from "@medusajs/types"
+import { getCacheOptions } from "./cookies"
 
-export const listRegions = cache(async function () {
-  return sdk.store.region
-    .list({}, { next: { tags: ["regions"] } })
+export const listRegions = async () => {
+  const next = {
+    ...(await getCacheOptions("regions")),
+  }
+
+  return await sdk.client
+    .fetch<{ regions: HttpTypes.StoreRegion[] }>(`/store/regions`, {
+      method: "GET",
+      next,
+      cache: "force-cache",
+    })
     .then(({ regions }) => regions)
-    .catch(medusaError)
-})
+}
 
-export const retrieveRegion = cache(async function (id: string) {
-  return sdk.store.region
-    .retrieve(id, {}, { next: { tags: ["regions"] } })
+export const retrieveRegion = async (id: string) => {
+  const next = {
+    ...(await getCacheOptions(["regions", id].join("-"))),
+  }
+
+  return await sdk.client
+    .fetch<{ region: HttpTypes.StoreRegion }>(`/store/regions/${id}`, {
+      method: "GET",
+      next,
+      cache: "force-cache",
+    })
     .then(({ region }) => region)
-    .catch(medusaError)
-})
+}
 
 const regionMap = new Map<string, HttpTypes.StoreRegion>()
 
-export const getRegion = cache(async function (countryCode: string) {
-  try {
-    if (regionMap.has(countryCode)) {
-      return regionMap.get(countryCode)
-    }
+export const getRegion = async (countryCode: string) => {
+  if (regionMap.has(countryCode)) {
+    return regionMap.get(countryCode)
+  }
 
-    const regions = await listRegions()
+  const regions = await listRegions()
 
-    if (!regions) {
-      return null
-    }
-
-    regions.forEach((region) => {
-      region.countries?.forEach((c) => {
-        regionMap.set(c?.iso_2 ?? "", region)
-      })
-    })
-
-    const region = countryCode
-      ? regionMap.get(countryCode)
-      : regionMap.get("us")
-
-    return region
-  } catch (e: any) {
+  if (!regions) {
     return null
   }
-})
+
+  regions.forEach((region) => {
+    region.countries?.forEach((c) => {
+      regionMap.set(c?.iso_2 ?? "", region)
+    })
+  })
+
+  const defaultCode = process.env.NEXT_PUBLIC_DEFAULT_REGION || "zm"
+
+  const region = countryCode
+    ? regionMap.get(countryCode) || regionMap.get(defaultCode) || regions[0]
+    : regionMap.get(defaultCode) || regions[0]
+
+  return region
+}

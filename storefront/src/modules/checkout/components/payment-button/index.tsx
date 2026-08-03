@@ -1,11 +1,8 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useMemo } from "react"
 import { HttpTypes } from "@medusajs/types"
-
-import { placeOrder } from "@lib/data/cart"
-import ErrorMessage from "../error-message"
-import LencoButton from "../lenco-button"
+import LencoButton from "../LencoButton"
 
 type PaymentButtonProps = {
   cart: HttpTypes.StoreCart
@@ -15,9 +12,6 @@ type PaymentButtonProps = {
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 const PaymentButton: React.FC<PaymentButtonProps> = ({ cart }) => {
-  const [submitting, setSubmitting] = useState(false)
-  const [errorMessage, setErrorMessage] = useState<string | null>(null)
-
   const readyForPayment = useMemo(() => {
     const shipping = cart.shipping_address
     const hasName = Boolean(shipping?.first_name?.trim() && shipping?.last_name?.trim())
@@ -31,32 +25,33 @@ const PaymentButton: React.FC<PaymentButtonProps> = ({ cart }) => {
       return hasName && hasPhone && hasDelivery && emailValid
     }
 
-    const lat = Number(sessionStorage.getItem("checkout_location_lat"))
-    const lng = Number(sessionStorage.getItem("checkout_location_lng"))
-    const hasLocation = Number.isFinite(lat) && Number.isFinite(lng)
+    const lat = Number(sessionStorage.getItem("checkout_location_lat") || (cart.metadata as any)?.lat)
+    const lng = Number(sessionStorage.getItem("checkout_location_lng") || (cart.metadata as any)?.lng)
+    const hasLocation = (Number.isFinite(lat) && lat !== 0) && (Number.isFinite(lng) && lng !== 0)
 
     return hasName && hasPhone && hasDelivery && hasLocation && emailValid
   }, [cart])
 
-  const handleLencoPayment = async () => {
-    setSubmitting(true)
-    setErrorMessage(null)
-
-    await placeOrder()
-      .catch((err) => {
-        setErrorMessage(err?.message || "Unable to complete Lenco payment")
-      })
-      .finally(() => {
-        setSubmitting(false)
-      })
+  if (!readyForPayment) {
+    return (
+      <div className="flex flex-col items-center w-full">
+        <button
+          disabled
+          className="w-full flex items-center justify-center gap-x-2 px-6 py-3 bg-zinc-200 dark:bg-zinc-800 text-zinc-400 dark:text-zinc-600 font-semibold rounded-lg cursor-not-allowed border border-dashed border-zinc-300 dark:border-zinc-700"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+          </svg>
+          Pay with Lenco
+        </button>
+        <p className="mt-2 text-xs text-zinc-500 text-center font-medium">
+          Please complete your contact info, shipping method, and Google Maps location to pay.
+        </p>
+      </div>
+    )
   }
 
-  return (
-    <>
-      <LencoButton disabled={!readyForPayment} isLoading={submitting} onClick={handleLencoPayment} />
-      <ErrorMessage error={errorMessage} data-testid="lenco-payment-error-message" />
-    </>
-  )
+  return <LencoButton cart={cart} />
 }
 
 export default PaymentButton

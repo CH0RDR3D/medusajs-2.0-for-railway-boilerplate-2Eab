@@ -15,7 +15,7 @@ const ShippingAddress = ({
 }) => {
   const [formData, setFormData] = useState<Record<string, any>>({})
 
-  const mapsKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY
+  const mapsKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY
 
   const countriesInRegion = useMemo(
     () => cart?.region?.countries?.map((c) => c.iso_2),

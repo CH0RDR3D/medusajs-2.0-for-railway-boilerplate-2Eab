@@ -14,3 +14,10 @@ export type VariantPrice = {
   price_type: string
   percentage_diff: string
 }
+
+export type StoreFreeShippingPrice = import("@medusajs/types").HttpTypes.StorePrice & {
+  target_reached: boolean
+  target_remaining: number
+  remaining_percentage: number
+  shipping_option_id?: string
+}

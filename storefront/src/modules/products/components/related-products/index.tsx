@@ -10,6 +10,8 @@ type RelatedProductsProps = {
 
 type StoreProductParamsWithTags = HttpTypes.StoreProductParams & {
   tags?: string[]
+  collection_id?: string[]
+  is_giftcard?: boolean
 }
 
 type StoreProductWithTags = HttpTypes.StoreProduct & {
@@ -23,7 +25,7 @@ export default async function RelatedProducts({
   const region = await getRegion(countryCode)
 
   if (!region) {
-  const queryParams: StoreProductParamsWithTags = {}
+    return null
   }
 
   // edit this function to define your related products logic

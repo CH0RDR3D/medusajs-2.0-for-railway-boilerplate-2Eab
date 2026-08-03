@@ -1,4 +1,14 @@
 export default function medusaError(error: any): never {
+  console.error("Full Medusa Error details:", {
+    message: error.message,
+    status: error.status,
+    name: error.name,
+    stack: error.stack,
+    response: error.response,
+    request: error.request,
+    error: error
+  })
+
   if (error.response) {
     // The request was made and the server responded with a status code
     // that falls out of the range of 2xx

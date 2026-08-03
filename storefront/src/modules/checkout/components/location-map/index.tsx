@@ -163,7 +163,7 @@ const LocationMap = ({ apiKey, location, onResolveLocation }: LocationMapProps) 
     mapRef.current.panTo(latLng)
   }, [location])
 
-  const useMyLocation = () => {
+  const useMyLocation = useCallback(() => {
     if (!navigator.geolocation) {
       setError("Geolocation is not available in this browser")
       return
@@ -188,7 +188,13 @@ const LocationMap = ({ apiKey, location, onResolveLocation }: LocationMapProps) 
       },
       { enableHighAccuracy: true, timeout: 15000 }
     )
-  }
+  }, [reverseGeocode])
+
+  useEffect(() => {
+    if (!location) {
+      useMyLocation()
+    }
+  }, [location, useMyLocation])
 
   return (
     <div className="mt-6 flex flex-col gap-3">
