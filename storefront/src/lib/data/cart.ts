@@ -13,8 +13,22 @@ import {
   removeCartId,
   setCartId,
 } from "./cookies"
-import { getRegion } from "./regions"
+import { getRegion, retrieveRegion } from "./regions"
 import { getLocale } from "./locale-actions"
+
+const getRegionCountryCodes = async (region: HttpTypes.StoreRegion) => {
+  let countries = region.countries || []
+
+  // Cart projections can omit nested region countries; fetch full region when needed.
+  if (!countries.length && region.id) {
+    const fullRegion = await retrieveRegion(region.id).catch(() => null)
+    countries = fullRegion?.countries || []
+  }
+
+  return countries
+    .map((country) => country.iso_2?.toLowerCase())
+    .filter(Boolean) as string[]
+}
 
 /**
  * Retrieves a cart by its ID. If no ID is provided, it will use the cart ID from the cookies.
@@ -349,6 +363,89 @@ export async function setShippingMethod({
     .catch(medusaError)
 }
 
+export async function setDeliveryDetails({
+  isPickup,
+  location,
+  address,
+}: {
+  isPickup: boolean
+  location?: { lat: number; lng: number }
+  address?: {
+    address_1?: string
+    city?: string
+    province?: string
+    postal_code?: string
+    country_code?: string
+  }
+}) {
+  const cart = await retrieveCart(undefined, "id,*region,*shipping_address,metadata")
+
+  if (!cart?.id || !cart.region) {
+    throw new Error("No existing cart found when updating delivery details")
+  }
+
+  const regionCountries = await getRegionCountryCodes(cart.region)
+
+  const defaultRegionCountryCode = regionCountries[0] || "zm"
+  const requestedCountryCode =
+    address?.country_code?.toLowerCase() ||
+    cart.shipping_address?.country_code?.toLowerCase() ||
+    defaultRegionCountryCode
+
+  const countryCode = regionCountries.includes(requestedCountryCode)
+    ? requestedCountryCode
+    : defaultRegionCountryCode
+
+  const pickupAddress = {
+    address_1: "Store Pickup",
+    city: "Lusaka",
+    province: "Lusaka",
+    postal_code: "10101",
+    country_code: defaultRegionCountryCode,
+    lat: -15.3875,
+    lng: 28.3228,
+  }
+
+  const resolvedLocation = isPickup
+    ? { lat: pickupAddress.lat, lng: pickupAddress.lng }
+    : {
+        lat: location?.lat ?? Number(cart.metadata?.lat ?? 0),
+        lng: location?.lng ?? Number(cart.metadata?.lng ?? 0),
+      }
+
+  const shippingAddress = {
+    first_name: cart.shipping_address?.first_name || "",
+    last_name: cart.shipping_address?.last_name || "",
+    phone: cart.shipping_address?.phone || "",
+    address_1: isPickup
+      ? pickupAddress.address_1
+      : address?.address_1 || cart.shipping_address?.address_1 || "Google Map Location",
+    city: isPickup
+      ? pickupAddress.city
+      : address?.city || cart.shipping_address?.city || "Lusaka",
+    province: isPickup
+      ? pickupAddress.province
+      : address?.province || cart.shipping_address?.province || "",
+    postal_code: isPickup
+      ? pickupAddress.postal_code
+      : address?.postal_code || cart.shipping_address?.postal_code || "10101",
+    country_code: isPickup ? pickupAddress.country_code : countryCode,
+  }
+
+  await updateCart({
+    shipping_address: shippingAddress,
+    billing_address: shippingAddress,
+    metadata: {
+      ...(cart.metadata || {}),
+      is_pickup: isPickup,
+      lat: resolvedLocation.lat,
+      lng: resolvedLocation.lng,
+    },
+  } as HttpTypes.StoreUpdateCart)
+
+  return { ok: true }
+}
+
 export async function initiatePaymentSession(
   cart: HttpTypes.StoreCart,
   data: HttpTypes.StoreInitializePaymentSession
@@ -461,9 +558,7 @@ export async function setAddresses(currentState: unknown, formData: FormData) {
       throw new Error("Cart region is missing")
     }
 
-    const regionCountries = (cart.region.countries || [])
-      .map((country) => country.iso_2?.toLowerCase())
-      .filter(Boolean) as string[]
+    const regionCountries = await getRegionCountryCodes(cart.region)
 
     const email = formData.get("email") as string
     const emailWithFallback = email && email.trim() !== "" ? email : `guest-${cartId}@example.com`

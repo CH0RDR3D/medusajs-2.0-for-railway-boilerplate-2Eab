@@ -4,7 +4,6 @@ import Input from "@modules/common/components/input"
 import { mapKeys } from "lodash"
 import React, { useCallback, useEffect, useMemo, useState } from "react"
 import AddressSelect from "../address-select"
-import LocationMap from "../location-map"
 
 const ShippingAddress = ({
   customer,
@@ -14,8 +13,6 @@ const ShippingAddress = ({
   cart: HttpTypes.StoreCart | null
 }) => {
   const [formData, setFormData] = useState<Record<string, any>>({})
-
-  const mapsKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY
 
   const countriesInRegion = useMemo(
     () => cart?.region?.countries?.map((c) => c.iso_2),
@@ -77,27 +74,6 @@ const ShippingAddress = ({
           prevState["shipping_address.country_code"] || defaultCountry,
       }))
     }
-
-    if (typeof window !== "undefined") {
-      const isPickup = sessionStorage.getItem("store_pickup_selected") === "true"
-      if (isPickup) {
-        const now = {
-          lat: -15.3875,
-          lng: 28.3228,
-        }
-
-        setFormData((prevState) => ({
-          ...prevState,
-          "shipping_address.address_1": "Store Pickup",
-          "shipping_address.city": prevState["shipping_address.city"] || "Lusaka",
-          "shipping_address.postal_code":
-            prevState["shipping_address.postal_code"] || "10101",
-          "location.lat": String(now.lat),
-          "location.lng": String(now.lng),
-        }))
-        sessionStorage.setItem("checkout_location_confirmed", "true")
-      }
-    }
   }, [cart, customer?.email, setFormAddress])
 
   const handleChange = (
@@ -110,42 +86,6 @@ const ShippingAddress = ({
       [e.target.name]: e.target.value,
     })
   }
-
-  const onResolveLocation = (
-    location: { lat: number; lng: number },
-    address: {
-      address_1: string
-      city: string
-      province: string
-      postalCode: string
-      countryCode: string
-    }
-  ) => {
-    setFormData((prevState) => ({
-      ...prevState,
-      "shipping_address.address_1": address.address_1,
-      "shipping_address.city": address.city,
-      "shipping_address.province": address.province,
-      "shipping_address.postal_code": address.postalCode,
-      "shipping_address.country_code": address.countryCode.toLowerCase(),
-      "location.lat": String(location.lat),
-      "location.lng": String(location.lng),
-    }))
-
-    if (typeof window !== "undefined") {
-      sessionStorage.setItem("checkout_location_confirmed", "true")
-      sessionStorage.setItem("checkout_location_lat", String(location.lat))
-      sessionStorage.setItem("checkout_location_lng", String(location.lng))
-    }
-  }
-
-  const currentLocation =
-    formData["location.lat"] && formData["location.lng"]
-      ? {
-          lat: Number(formData["location.lat"]),
-          lng: Number(formData["location.lng"]),
-        }
-      : null
 
   return (
     <>
@@ -208,12 +148,6 @@ const ShippingAddress = ({
         />
       </div>
 
-      <LocationMap
-        apiKey={mapsKey}
-        location={currentLocation}
-        onResolveLocation={onResolveLocation}
-      />
-
       <input
         type="hidden"
         name="shipping_address.address_1"
@@ -241,6 +175,7 @@ const ShippingAddress = ({
       />
       <input type="hidden" name="location.lat" value={formData["location.lat"] || ""} />
       <input type="hidden" name="location.lng" value={formData["location.lng"] || ""} />
+      <input type="hidden" name="is_pickup" value="false" />
 
       <input type="hidden" name="same_as_billing" value="on" data-testid="billing-address-checkbox" />
     </>
