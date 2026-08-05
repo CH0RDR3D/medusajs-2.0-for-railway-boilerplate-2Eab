@@ -9,8 +9,9 @@ type Location = {
 }
 
 type ResolvedAddress = {
-  formattedAddress: string
+  address_1: string
   city: string
+  province: string
   postalCode: string
   countryCode: string
 }
@@ -92,11 +93,16 @@ const LocationMap = ({ apiKey, location, onResolveLocation }: LocationMapProps) 
         return top.address_components?.find((c: any) => c.types?.includes(type))?.short_name || ""
       }
 
+      const streetNumber = getComponent("street_number")
+      const route = getComponent("route")
+      const addressLine1 = [streetNumber, route].filter(Boolean).join(" ") || top.formatted_address || ""
+
       onResolveLocation(coords, {
-        formattedAddress: top.formatted_address || "",
-        city: getComponent("locality") || getComponent("administrative_area_level_2"),
+        address_1: addressLine1,
+        city: getComponent("locality") || getComponent("postal_town") || getComponent("administrative_area_level_2"),
+        province: getComponent("administrative_area_level_1"),
         postalCode: getComponent("postal_code"),
-        countryCode: getComponentShort("country").toUpperCase(),
+        countryCode: getComponentShort("country").toLowerCase(),
       })
     })
   }, [onResolveLocation])

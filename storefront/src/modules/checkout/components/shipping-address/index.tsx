@@ -114,18 +114,20 @@ const ShippingAddress = ({
   const onResolveLocation = (
     location: { lat: number; lng: number },
     address: {
-      formattedAddress: string
+      address_1: string
       city: string
+      province: string
       postalCode: string
       countryCode: string
     }
   ) => {
     setFormData((prevState) => ({
       ...prevState,
-      "shipping_address.address_1": address.formattedAddress,
+      "shipping_address.address_1": address.address_1,
       "shipping_address.city": address.city,
+      "shipping_address.province": address.province,
       "shipping_address.postal_code": address.postalCode,
-      "shipping_address.country_code": address.countryCode,
+      "shipping_address.country_code": address.countryCode.toLowerCase(),
       "location.lat": String(location.lat),
       "location.lng": String(location.lng),
     }))
@@ -230,7 +232,12 @@ const ShippingAddress = ({
       <input
         type="hidden"
         name="shipping_address.country_code"
-        value={formData["shipping_address.country_code"] || ""}
+        value={(formData["shipping_address.country_code"] || "").toLowerCase()}
+      />
+      <input
+        type="hidden"
+        name="shipping_address.province"
+        value={formData["shipping_address.province"] || ""}
       />
       <input type="hidden" name="location.lat" value={formData["location.lat"] || ""} />
       <input type="hidden" name="location.lng" value={formData["location.lng"] || ""} />

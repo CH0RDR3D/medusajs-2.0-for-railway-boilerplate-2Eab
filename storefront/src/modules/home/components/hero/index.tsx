@@ -145,19 +145,6 @@ export default function HeroBanner() {
         </svg>
       </button>
 
-      {/* Dot indicators */}
-      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex gap-2">
-        {slides.map((_, i) => (
-          <button
-            key={i}
-            onClick={() => setCurrent(i)}
-            className={`transition-all duration-300 rounded-full ${
-              i === current ? "w-8 h-2 bg-amber-400" : "w-2 h-2 bg-black/20 hover:bg-black/40 dark:bg-white/40 dark:hover:bg-white/70"
-            }`}
-          />
-        ))}
-      </div>
-
       {/* Bottom fade — bleeds into section below; uses CSS variable for theme compat */}
       <div
         className="absolute bottom-0 left-0 w-full h-40 pointer-events-none"

@@ -197,9 +197,59 @@ export async function updateLineItem({
     .catch(medusaError)
 }
 
-export async function deleteLineItem(lineId: string) {
-  if (!lineId) {
-    throw new Error("Missing lineItem ID when deleting line item")
+type RemoveFromCartInput = {
+  lineId?: string
+  variantId?: string
+  productId?: string
+}
+
+const retrieveCartFresh = async (cartId: string) => {
+  const headers = {
+    ...(await getAuthHeaders()),
+  }
+
+  return await sdk.client
+    .fetch<HttpTypes.StoreCartResponse>(`/store/carts/${cartId}`, {
+      method: "GET",
+      query: {
+        fields: "id,*items",
+      },
+      headers,
+      cache: "no-store",
+    })
+    .then(({ cart }) => cart)
+}
+
+const resolveLatestLineItemId = (
+  cart: HttpTypes.StoreCart,
+  input: RemoveFromCartInput
+) => {
+  const items = cart.items || []
+
+  if (input.lineId && items.some((item) => item.id === input.lineId)) {
+    return input.lineId
+  }
+
+  if (input.variantId) {
+    const byVariant = items.find((item) => item.variant_id === input.variantId)
+    if (byVariant?.id) {
+      return byVariant.id
+    }
+  }
+
+  if (input.productId) {
+    const byProduct = items.find((item) => item.product_id === input.productId)
+    if (byProduct?.id) {
+      return byProduct.id
+    }
+  }
+
+  return null
+}
+
+export async function removeFromCart(input: RemoveFromCartInput) {
+  if (!input.lineId && !input.variantId && !input.productId) {
+    throw new Error("Missing identifiers when removing line item")
   }
 
   const cartId = await getCartId()
@@ -208,20 +258,75 @@ export async function deleteLineItem(lineId: string) {
     throw new Error("Missing cart ID when deleting line item")
   }
 
+  const freshCart = await retrieveCartFresh(cartId)
+  const resolvedLineId = resolveLatestLineItemId(freshCart, input)
+
+  if (!resolvedLineId) {
+    const cartCacheTag = await getCacheTag("carts")
+    revalidateTag(cartCacheTag)
+
+    return {
+      ok: true,
+      skipped: true,
+      message: "Line item no longer exists in the cart.",
+    }
+  }
+
   const headers = {
     ...(await getAuthHeaders()),
   }
 
-  await sdk.store.cart
-    .deleteLineItem(cartId, lineId, {}, headers)
-    .then(async () => {
+  try {
+    await sdk.store.cart.deleteLineItem(cartId, resolvedLineId, {}, headers)
+
+    const cartCacheTag = await getCacheTag("carts")
+    revalidateTag(cartCacheTag)
+
+    const fulfillmentCacheTag = await getCacheTag("fulfillment")
+    revalidateTag(fulfillmentCacheTag)
+
+    return {
+      ok: true,
+      skipped: false,
+    }
+  } catch (error: any) {
+    const message = String(error?.message || "")
+
+    if (message.toLowerCase().includes("was not found")) {
+      const latestCart = await retrieveCartFresh(cartId)
+      const retryLineId = resolveLatestLineItemId(latestCart, input)
+
+      if (!retryLineId) {
+        const cartCacheTag = await getCacheTag("carts")
+        revalidateTag(cartCacheTag)
+
+        return {
+          ok: true,
+          skipped: true,
+          message: "Line item was already removed.",
+        }
+      }
+
+      await sdk.store.cart.deleteLineItem(cartId, retryLineId, {}, headers)
+
       const cartCacheTag = await getCacheTag("carts")
       revalidateTag(cartCacheTag)
 
       const fulfillmentCacheTag = await getCacheTag("fulfillment")
       revalidateTag(fulfillmentCacheTag)
-    })
-    .catch(medusaError)
+
+      return {
+        ok: true,
+        skipped: false,
+      }
+    }
+
+    medusaError(error)
+  }
+}
+
+export async function deleteLineItem(lineId: string) {
+  return removeFromCart({ lineId })
 }
 
 export async function setShippingMethod({
@@ -346,15 +451,37 @@ export async function setAddresses(currentState: unknown, formData: FormData) {
     if (!formData) {
       throw new Error("No form data found when setting addresses")
     }
-    const cartId = getCartId()
+    const cartId = await getCartId()
     if (!cartId) {
       throw new Error("No existing cart found when setting addresses")
     }
+
+    const cart = await retrieveCart(undefined, "id,*region")
+    if (!cart?.region) {
+      throw new Error("Cart region is missing")
+    }
+
+    const regionCountries = (cart.region.countries || [])
+      .map((country) => country.iso_2?.toLowerCase())
+      .filter(Boolean) as string[]
 
     const email = formData.get("email") as string
     const emailWithFallback = email && email.trim() !== "" ? email : `guest-${cartId}@example.com`
 
     const isPickup = formData.get("is_pickup") === "true"
+
+    const submittedCountryCode = (formData.get("shipping_address.country_code") || "")
+      .toString()
+      .trim()
+      .toLowerCase()
+    const defaultRegionCountryCode = regionCountries[0] || "zm"
+    const countryCode = submittedCountryCode || defaultRegionCountryCode
+
+    if (!regionCountries.includes(countryCode)) {
+      throw new Error(
+        `Country with code ${countryCode.toUpperCase()} is not within region ${cart.region.name}`
+      )
+    }
 
     const data = {
       shipping_address: {
@@ -365,8 +492,8 @@ export async function setAddresses(currentState: unknown, formData: FormData) {
         company: "",
         postal_code: formData.get("shipping_address.postal_code") || "10101",
         city: formData.get("shipping_address.city") || "Lusaka",
-        country_code: formData.get("shipping_address.country_code") || "zm",
-        province: "",
+        country_code: countryCode,
+        province: formData.get("shipping_address.province") || "",
         phone: formData.get("shipping_address.phone"),
       },
       email: emailWithFallback,
@@ -385,7 +512,9 @@ export async function setAddresses(currentState: unknown, formData: FormData) {
     return e.message
   }
 
-  const countryCode = (formData.get("shipping_address.country_code") || "zm").toString().toLowerCase()
+  const countryCode = (formData.get("shipping_address.country_code") || "zm")
+    .toString()
+    .toLowerCase()
   redirect(
     `/${countryCode}/checkout?step=delivery`
   )

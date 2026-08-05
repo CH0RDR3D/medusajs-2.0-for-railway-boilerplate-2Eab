@@ -117,12 +117,12 @@ export default async function Footer() {
                     rel="noreferrer"
                     className="hover:text-ui-fg-base"
                   >
-                    GitHub
+                    About SYA
                   </a>
                 </li>
                 <li>
                   <a
-                    href="https://docs.medusajs.com"
+                    href=""
                     target="_blank"
                     rel="noreferrer"
                     className="hover:text-ui-fg-base"

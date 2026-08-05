@@ -9,9 +9,9 @@ export const revalidate = 0
 
 
 export const metadata: Metadata = {
-  title: "eStorefront - A BLVCK Inc. Ecommerce Site",
+  title: "SYA Store - Lusaka's Premier Online Shopping Destination",
   description:
-    "A Blvck Inc. Store crafted to showcase products beautifully, built for performance and customer delight.",
+    "SYA Store is your one-stop online shop for a wide range of products, from electronics to fashion. Enjoy fast delivery and excellent customer service. Lusaka's Premier Online Shopping Destination. Shop now and experience the convenience of online shopping with SYA Store.",
 }
 
 export default async function Home(props: {
