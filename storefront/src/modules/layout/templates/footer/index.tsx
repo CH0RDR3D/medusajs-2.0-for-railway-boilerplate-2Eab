@@ -124,6 +124,7 @@ export default async function Footer() {
                   <a
                     href=""
                     target="_blank"
+                    href="storefront/src/modules/customer-service/components/customer-service-view.tsx"
                     rel="noreferrer"
                     className="hover:text-ui-fg-base"
                   >
