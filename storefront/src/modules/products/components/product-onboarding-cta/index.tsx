@@ -1,9 +1,18 @@
-import { Button, Container, Text } from "@medusajs/ui"
-import { cookies } from "next/headers"
+"use client"
 
-const ProductOnboardingCta = async () => {
-  const cookieStore = await cookies()
-  const isOnboarding = cookieStore.get("_medusa_onboarding")?.value === "true"
+import { Button, Container, Text } from "@medusajs/ui"
+import { useEffect, useState } from "react"
+
+const ProductOnboardingCta = () => {
+  const [isOnboarding, setIsOnboarding] = useState(false)
+
+  useEffect(() => {
+    if (typeof document === "undefined") {
+      return
+    }
+
+    setIsOnboarding(document.cookie.includes("_medusa_onboarding=true"))
+  }, [])
 
   if (!isOnboarding) {
     return null
