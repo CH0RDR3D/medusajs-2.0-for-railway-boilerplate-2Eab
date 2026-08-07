@@ -1,5 +1,6 @@
 "use server"
 
+import { sdk } from "@lib/config"
 import {
   getDailyCuratedProducts,
   getDailyDealsProducts,
@@ -9,34 +10,6 @@ import { sortProducts } from "@lib/util/sort-products"
 import { HttpTypes } from "@medusajs/types"
 import { SortOptions } from "@modules/store/components/refinement-list/sort-products"
 import { getRegion, retrieveRegion } from "./regions"
-
-const MEDUSA_BACKEND_URL =
-  process.env.NEXT_PUBLIC_MEDUSA_BACKEND_URL || "http://localhost:9000"
-
-const buildStoreHeaders = () => {
-  const publishableKey = process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY
-
-  return publishableKey
-    ? { "x-publishable-api-key": publishableKey }
-    : undefined
-}
-
-const appendQuery = (
-  params: URLSearchParams,
-  key: string,
-  value: unknown
-) => {
-  if (value === undefined || value === null || value === "") {
-    return
-  }
-
-  if (Array.isArray(value)) {
-    value.forEach((item) => appendQuery(params, key, item))
-    return
-  }
-
-  params.append(key, String(value))
-}
 
 type ProductListQueryParams = (HttpTypes.FindParams &
   HttpTypes.StoreProductListParams) & {
@@ -101,51 +74,40 @@ export const listProducts = async ({
     ...backendQueryParams
   } = (queryParams || {}) as any
 
-  const params = new URLSearchParams()
-  appendQuery(params, "limit", limit)
-  appendQuery(params, "offset", offset)
-  appendQuery(params, "region_id", region.id)
-  appendQuery(
-    params,
-    "fields",
-    "*variants.calculated_price,+variants.inventory_quantity,*variants.images,*variants.options,+metadata,+tags,*variants.prices"
-  )
+  try {
+    const { products, count } = await sdk.client.fetch<{
+      products: HttpTypes.StoreProduct[]
+      count: number
+    }>(`/store/products`, {
+      method: "GET",
+      query: {
+        limit,
+        offset,
+        region_id: region.id,
+        fields:
+          "*variants.calculated_price,+variants.inventory_quantity,*variants.images,*variants.options,+metadata,+tags,*variants.prices",
+        ...backendQueryParams,
+      },
+      next: { revalidate: 300, tags: ["products"] },
+      cache: "force-cache",
+    })
 
-  Object.entries(backendQueryParams).forEach(([key, value]) => {
-    appendQuery(params, key, value)
-  })
+    const nextPage = count > offset + limit ? pageParam + 1 : null
 
-  const response = await fetch(`${MEDUSA_BACKEND_URL}/store/products?${params.toString()}`, {
-    method: "GET",
-    headers: buildStoreHeaders(),
-    next: { revalidate: 300, tags: ["products"] },
-    cache: "force-cache",
-  })
-
-  if (!response.ok) {
+    return {
+      response: {
+        products: products ?? [],
+        count: count ?? 0,
+      },
+      nextPage,
+      queryParams,
+    }
+  } catch {
     return {
       response: { products: [], count: 0 },
       nextPage: null,
       queryParams,
     }
-  }
-
-  const data = (await response.json()) as {
-    products?: HttpTypes.StoreProduct[]
-    count?: number
-  }
-
-  const products = data.products ?? []
-  const count = data.count ?? 0
-  const nextPage = count > offset + limit ? pageParam + 1 : null
-
-  return {
-    response: {
-      products,
-      count,
-    },
-    nextPage,
-    queryParams,
   }
 }
 
@@ -303,34 +265,27 @@ export const getProductByHandle = async (
   handle: string,
   regionId: string
 ): Promise<HttpTypes.StoreProduct | null> => {
-  const params = new URLSearchParams()
-  appendQuery(params, "handle", handle)
-  appendQuery(params, "region_id", regionId)
-  appendQuery(params, "limit", 1)
-  appendQuery(
-    params,
-    "fields",
-    "*variants.calculated_price,+variants.inventory_quantity,*variants.images,*variants.options,+metadata,+tags,*variants.prices,*collection,*categories,*images"
-  )
+  try {
+    const { products } = await sdk.client.fetch<{
+      products: HttpTypes.StoreProduct[]
+      count: number
+    }>(`/store/products`, {
+      method: "GET",
+      query: {
+        handle,
+        region_id: regionId,
+        limit: 1,
+        fields:
+          "*variants.calculated_price,+variants.inventory_quantity,*variants.images,*variants.options,+metadata,+tags,*variants.prices,*collection,*categories,*images",
+      },
+      next: { revalidate: 300, tags: ["products"] },
+      cache: "force-cache",
+    })
 
-  const response = await fetch(`${MEDUSA_BACKEND_URL}/store/products?${params.toString()}`, {
-    method: "GET",
-    headers: buildStoreHeaders(),
-    next: { revalidate: 300, tags: ["products"] },
-    cache: "force-cache",
-  })
-
-  if (!response.ok) {
+    return products?.[0] ?? null
+  } catch {
     return null
   }
-
-  const data = (await response.json()) as {
-    products?: HttpTypes.StoreProduct[]
-  }
-
-  const products = data.products ?? []
-
-  return products[0] ?? null
 }
 
 export const getProductsById = async ({

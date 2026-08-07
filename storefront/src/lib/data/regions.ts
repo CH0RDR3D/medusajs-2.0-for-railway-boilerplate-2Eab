@@ -1,50 +1,40 @@
 "use server"
 
+import { sdk } from "@lib/config"
 import { HttpTypes } from "@medusajs/types"
 
-const MEDUSA_BACKEND_URL =
-  process.env.NEXT_PUBLIC_MEDUSA_BACKEND_URL || "http://localhost:9000"
-
-const getStoreHeaders = () => {
-  const publishableKey = process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY
-
-  return publishableKey
-    ? { "x-publishable-api-key": publishableKey }
-    : undefined
-}
-
 export const listRegions = async () => {
-  const response = await fetch(`${MEDUSA_BACKEND_URL}/store/regions`, {
-    method: "GET",
-    headers: getStoreHeaders(),
-    next: { revalidate: 3600, tags: ["regions"] },
-    cache: "force-cache",
-  })
+  try {
+    const { regions } = await sdk.client.fetch<{ regions: HttpTypes.StoreRegion[] }>(
+      "/store/regions",
+      {
+        method: "GET",
+        next: { revalidate: 3600, tags: ["regions"] },
+        cache: "force-cache",
+      }
+    )
 
-  if (!response.ok) {
+    return regions ?? []
+  } catch {
     return []
   }
-
-  const data = (await response.json()) as { regions?: HttpTypes.StoreRegion[] }
-
-  return data.regions ?? []
 }
 
 export const retrieveRegion = async (id: string) => {
-  const response = await fetch(`${MEDUSA_BACKEND_URL}/store/regions/${id}`, {
-    method: "GET",
-    headers: getStoreHeaders(),
-    next: { revalidate: 3600, tags: ["regions", `regions-${id}`] },
-    cache: "force-cache",
-  })
+  try {
+    const { region } = await sdk.client.fetch<{ region: HttpTypes.StoreRegion }>(
+      `/store/regions/${id}`,
+      {
+        method: "GET",
+        next: { revalidate: 3600, tags: ["regions", `regions-${id}`] },
+        cache: "force-cache",
+      }
+    )
 
-  if (!response.ok) {
+    return region ?? null
+  } catch {
     return null
   }
-
-  const data = (await response.json()) as { region?: HttpTypes.StoreRegion }
-
-  return data.region ?? null
 }
 
 const regionMap = new Map<string, HttpTypes.StoreRegion>()
