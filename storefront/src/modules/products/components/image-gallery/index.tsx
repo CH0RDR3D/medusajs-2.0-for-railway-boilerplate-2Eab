@@ -3,7 +3,7 @@
 import { HttpTypes } from "@medusajs/types"
 import { Container } from "@medusajs/ui"
 import Image from "next/image"
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 
 type ImageGalleryProps = {
   images: HttpTypes.StoreProductImage[]
@@ -15,17 +15,42 @@ const ImageGallery = ({ images }: ImageGalleryProps) => {
     [images]
   )
   const [selectedIndex, setSelectedIndex] = useState(0)
+  const thumbnailsRef = useRef<HTMLDivElement>(null)
   const selectedImage = validImages[selectedIndex]
+
+  useEffect(() => {
+    if (validImages.length < 2) {
+      return
+    }
+
+    const interval = window.setInterval(() => {
+      setSelectedIndex((current) => (current + 1) % validImages.length)
+    }, 5000)
+
+    return () => window.clearInterval(interval)
+  }, [validImages.length])
+
+  useEffect(() => {
+    const activeThumbnail = thumbnailsRef.current?.querySelector(
+      `[data-thumbnail-index="${selectedIndex}"]`
+    ) as HTMLButtonElement | null
+
+    activeThumbnail?.scrollIntoView({
+      behavior: "smooth",
+      inline: "center",
+      block: "nearest",
+    })
+  }, [selectedIndex])
 
   if (!selectedImage?.url) {
     return null
   }
 
   return (
-    <div className="flex flex-col items-start relative">
-      <div className="flex flex-col flex-1 small:mx-16 gap-y-4 w-full">
+    <div className="flex flex-col items-start relative w-full">
+      <div className="flex flex-col flex-1 gap-y-4 w-full">
         <Container
-          className="relative aspect-square w-full overflow-hidden bg-ui-bg-subtle"
+          className="relative aspect-square w-full overflow-hidden bg-ui-bg-subtle rounded-rounded"
           id={selectedImage.id}
         >
           <Image
@@ -42,14 +67,18 @@ const ImageGallery = ({ images }: ImageGalleryProps) => {
         </Container>
 
         {validImages.length > 1 && (
-          <div className="grid w-full grid-cols-4 small:grid-cols-5 gap-2">
+          <div
+            ref={thumbnailsRef}
+            className="flex w-full gap-2 overflow-x-auto pb-1 snap-x snap-mandatory"
+          >
             {validImages.map((image, index) => (
               <button
                 key={image.id}
                 type="button"
                 // Keep thumbnail selection local to avoid route-level re-renders.
                 onClick={() => setSelectedIndex(index)}
-                className="rounded-rounded overflow-hidden"
+                className="shrink-0 w-20 small:w-24 rounded-rounded overflow-hidden snap-center"
+                data-thumbnail-index={index}
                 aria-label={`Select product image ${index + 1}`}
               >
                 <Container

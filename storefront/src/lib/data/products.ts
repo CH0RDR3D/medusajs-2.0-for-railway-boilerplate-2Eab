@@ -19,6 +19,9 @@ type ProductListQueryParams = (HttpTypes.FindParams &
 const getMedusaBackendUrl = () =>
   process.env.NEXT_PUBLIC_MEDUSA_BACKEND_URL || "http://localhost:9000"
 
+const getPublishableApiKey = () =>
+  process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY || ""
+
 const appendSearchParams = (
   searchParams: URLSearchParams,
   query: Record<string, unknown>
@@ -50,6 +53,11 @@ const fetchStoreProducts = async <T,>(
 
   const response = await fetch(url.toString(), {
     method: "GET",
+    headers: getPublishableApiKey()
+      ? {
+          "x-publishable-api-key": getPublishableApiKey(),
+        }
+      : undefined,
     next: { revalidate, tags: ["products"] },
     cache: "force-cache",
   })

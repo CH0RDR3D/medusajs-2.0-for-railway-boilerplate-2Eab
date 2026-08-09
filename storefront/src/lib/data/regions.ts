@@ -1,17 +1,36 @@
 "use server"
 
-import { sdk } from "@lib/config"
 import { HttpTypes } from "@medusajs/types"
+
+const getMedusaBackendUrl = () =>
+  process.env.NEXT_PUBLIC_MEDUSA_BACKEND_URL || "http://localhost:9000"
+
+const getPublishableApiKey = () =>
+  process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY || ""
+
+const fetchRegions = async <T,>(path: string, revalidate = 3600) => {
+  const response = await fetch(`${getMedusaBackendUrl()}${path}`, {
+    method: "GET",
+    headers: getPublishableApiKey()
+      ? {
+          "x-publishable-api-key": getPublishableApiKey(),
+        }
+      : undefined,
+    cache: "force-cache",
+    next: { revalidate, tags: ["regions"] },
+  })
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch regions: ${response.status}`)
+  }
+
+  return (await response.json()) as T
+}
 
 export const listRegions = async () => {
   try {
-    const { regions } = await sdk.client.fetch<{ regions: HttpTypes.StoreRegion[] }>(
-      "/store/regions",
-      {
-        method: "GET",
-        next: { revalidate: 3600, tags: ["regions"] },
-        cache: "force-cache",
-      }
+    const { regions } = await fetchRegions<{ regions: HttpTypes.StoreRegion[] }>(
+      "/store/regions"
     )
 
     return regions ?? []
@@ -22,13 +41,9 @@ export const listRegions = async () => {
 
 export const retrieveRegion = async (id: string) => {
   try {
-    const { region } = await sdk.client.fetch<{ region: HttpTypes.StoreRegion }>(
+    const { region } = await fetchRegions<{ region: HttpTypes.StoreRegion }>(
       `/store/regions/${id}`,
-      {
-        method: "GET",
-        next: { revalidate: 3600, tags: ["regions", `regions-${id}`] },
-        cache: "force-cache",
-      }
+      3600
     )
 
     return region ?? null
