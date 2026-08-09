@@ -7,12 +7,6 @@ import { ChevronDownMini } from "@medusajs/icons"
 import { HttpTypes } from "@medusajs/types"
 import clsx from "clsx"
 
-const getMedusaBackendUrl = () =>
-  process.env.NEXT_PUBLIC_MEDUSA_BACKEND_URL || "http://localhost:9000"
-
-const getPublishableApiKey = () =>
-  process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY || ""
-
 type OptionsPickerProps = {
   regionId?: string
   categoryId?: string
@@ -54,7 +48,10 @@ const OptionsPicker = ({
         if (categoryId) queryParams.category_id = [categoryId]
         if (collectionId) queryParams.collection_id = [collectionId]
 
-        const url = new URL(`${getMedusaBackendUrl()}/store/products`)
+        const url = new URL(
+          "/api/medusa/store/products",
+          window.location.origin
+        )
         Object.entries(queryParams).forEach(([key, value]) => {
           if (Array.isArray(value)) {
             value.forEach((item) => url.searchParams.append(key, String(item)))
@@ -65,12 +62,9 @@ const OptionsPicker = ({
 
         const response = await fetch(url.toString(), {
           method: "GET",
-          headers: getPublishableApiKey()
-            ? {
-                "x-publishable-api-key": getPublishableApiKey(),
-              }
-            : undefined,
-        }).then((res) => res.json() as Promise<{ products?: HttpTypes.StoreProduct[] }>)
+        }).then(
+          (res) => res.json() as Promise<{ products?: HttpTypes.StoreProduct[] }>
+        )
 
         if (!isMounted) return
 
