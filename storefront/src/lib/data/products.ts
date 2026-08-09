@@ -1,6 +1,5 @@
 "use server"
 
-import { sdk } from "@lib/config"
 import {
   getDailyCuratedProducts,
   getDailyDealsProducts,
@@ -15,6 +14,51 @@ type ProductListQueryParams = (HttpTypes.FindParams &
   HttpTypes.StoreProductListParams) & {
   options?: string[]
   option_value_id?: string | string[]
+}
+
+const getMedusaBackendUrl = () =>
+  process.env.NEXT_PUBLIC_MEDUSA_BACKEND_URL || "http://localhost:9000"
+
+const appendSearchParams = (
+  searchParams: URLSearchParams,
+  query: Record<string, unknown>
+) => {
+  Object.entries(query).forEach(([key, value]) => {
+    if (value == null || value === "") {
+      return
+    }
+
+    if (Array.isArray(value)) {
+      value.forEach((item) => {
+        if (item != null && item !== "") {
+          searchParams.append(key, String(item))
+        }
+      })
+      return
+    }
+
+    searchParams.set(key, String(value))
+  })
+}
+
+const fetchStoreProducts = async <T,>(
+  query: Record<string, unknown>,
+  revalidate = 300
+) => {
+  const url = new URL(`${getMedusaBackendUrl()}/store/products`)
+  appendSearchParams(url.searchParams, query)
+
+  const response = await fetch(url.toString(), {
+    method: "GET",
+    next: { revalidate, tags: ["products"] },
+    cache: "force-cache",
+  })
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch products: ${response.status}`)
+  }
+
+  return (await response.json()) as T
 }
 
 /**
@@ -75,21 +119,16 @@ export const listProducts = async ({
   } = (queryParams || {}) as any
 
   try {
-    const { products, count } = await sdk.client.fetch<{
+    const { products, count } = await fetchStoreProducts<{
       products: HttpTypes.StoreProduct[]
       count: number
-    }>(`/store/products`, {
-      method: "GET",
-      query: {
-        limit,
-        offset,
-        region_id: region.id,
-        fields:
-          "*variants.calculated_price,+variants.inventory_quantity,*variants.images,*variants.options,+metadata,+tags,*variants.prices",
-        ...backendQueryParams,
-      },
-      next: { revalidate: 300, tags: ["products"] },
-      cache: "force-cache",
+    }>({
+      limit,
+      offset,
+      region_id: region.id,
+      fields:
+        "*variants.calculated_price,+variants.inventory_quantity,*variants.images,*variants.options,+metadata,+tags,*variants.prices",
+      ...backendQueryParams,
     })
 
     const nextPage = count > offset + limit ? pageParam + 1 : null
@@ -266,20 +305,15 @@ export const getProductByHandle = async (
   regionId: string
 ): Promise<HttpTypes.StoreProduct | null> => {
   try {
-    const { products } = await sdk.client.fetch<{
+    const { products } = await fetchStoreProducts<{
       products: HttpTypes.StoreProduct[]
       count: number
-    }>(`/store/products`, {
-      method: "GET",
-      query: {
-        handle,
-        region_id: regionId,
-        limit: 1,
-        fields:
-          "*variants.calculated_price,+variants.inventory_quantity,*variants.images,*variants.options,+metadata,+tags,*variants.prices,*collection,*categories,*images",
-      },
-      next: { revalidate: 300, tags: ["products"] },
-      cache: "force-cache",
+    }>({
+      handle,
+      region_id: regionId,
+      limit: 1,
+      fields:
+        "*variants.calculated_price,+variants.inventory_quantity,*variants.images,*variants.options,+metadata,+tags,*variants.prices,*collection,*categories,*images",
     })
 
     return products?.[0] ?? null
