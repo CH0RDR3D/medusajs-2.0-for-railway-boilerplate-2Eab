@@ -1,8 +1,6 @@
 import { Suspense } from "react"
 
 import { listCategories } from "@lib/data/categories"
-import { listLocales } from "@lib/data/locales"
-import { getLocale } from "@lib/data/locale-actions"
 import { listRegions } from "@lib/data/regions"
 import { StoreRegion } from "@medusajs/types"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
@@ -24,10 +22,8 @@ import Logo from "@modules/layout/components/logo"
  *   — categories & search collapse into the SideMenu drawer
  */
 export default async function Nav() {
-  const [regions, locales, currentLocale, categories] = await Promise.all([
+  const [regions, categories] = await Promise.all([
     listRegions().then((regions: StoreRegion[]) => regions),
-    listLocales(),
-    getLocale(),
     listCategories().catch(() => []),
   ])
 
@@ -51,8 +47,6 @@ export default async function Nav() {
           <div className="flex items-center h-full flex-shrink-0">
             <SideMenu
               regions={regions}
-              locales={locales}
-              currentLocale={currentLocale}
             />
           </div>
 */}
