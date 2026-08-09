@@ -1,7 +1,6 @@
 "use server"
 
 import { HttpTypes } from "@medusajs/types"
-import { getCacheOptions } from "./cookies"
 
 type CollectionListQuery = Record<string, string | number>
 
@@ -45,13 +44,9 @@ const fetchCollections = async <T,>(
 }
 
 export const retrieveCollection = async (id: string) => {
-  const next = {
-    ...(await getCacheOptions("collections")),
-  }
-
   const { collection } = await fetchCollections<{
     collection: HttpTypes.StoreCollection
-  }>(`/store/collections/${id}`, {}, next)
+  }>(`/store/collections/${id}`, {}, { revalidate: 3600, tags: ["collections"] })
 
   return collection
 }
@@ -59,10 +54,6 @@ export const retrieveCollection = async (id: string) => {
 export const listCollections = async (
   queryParams: CollectionListQuery = {}
 ): Promise<{ collections: HttpTypes.StoreCollection[]; count: number }> => {
-  const next = {
-    ...(await getCacheOptions("collections")),
-  }
-
   const query = {
     limit: queryParams.limit ?? 100,
     offset: queryParams.offset ?? 0,
@@ -72,7 +63,7 @@ export const listCollections = async (
   const { collections, count } = await fetchCollections<{
     collections: HttpTypes.StoreCollection[]
     count: number
-  }>("/store/collections", query, next)
+  }>("/store/collections", query, { revalidate: 3600, tags: ["collections"] })
 
   return { collections, count }
 }
@@ -87,14 +78,10 @@ export const getCollectionsList = async (
 export const getCollectionByHandle = async (
   handle: string
 ): Promise<HttpTypes.StoreCollection | null> => {
-  const next = {
-    ...(await getCacheOptions("collections")),
-  }
-
   const { collections } = await fetchCollections<HttpTypes.StoreCollectionListResponse>(
     "/store/collections",
     { handle, fields: "*products" },
-    next
+    { revalidate: 3600, tags: ["collections"] }
   )
 
   return collections[0] || null

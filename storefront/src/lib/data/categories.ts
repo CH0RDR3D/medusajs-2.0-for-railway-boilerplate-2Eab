@@ -1,5 +1,4 @@
 import { HttpTypes } from "@medusajs/types"
-import { getCacheOptions } from "./cookies"
 
 const getMedusaBackendUrl = () =>
   process.env.NEXT_PUBLIC_MEDUSA_BACKEND_URL || "http://localhost:9000"
@@ -46,10 +45,6 @@ const fetchCategories = async <T,>(query: Record<string, unknown>, next: Record<
 }
 
 export const listCategories = async (query?: Record<string, unknown>) => {
-  const next = {
-    ...(await getCacheOptions("categories")),
-  }
-
   const limit = query?.limit || 100
 
   const { product_categories } = await fetchCategories<{
@@ -61,7 +56,7 @@ export const listCategories = async (query?: Record<string, unknown>) => {
       limit,
       ...query,
     },
-    next
+    { revalidate: 3600, tags: ["categories"] }
   )
 
   return product_categories
@@ -80,17 +75,13 @@ export const getCategoryByHandle = async (categoryHandle: string[]) => {
   const handle = `${categoryHandle.join("/")}`
   const fallbackHandle = categoryHandle[categoryHandle.length - 1]
 
-  const next = {
-    ...(await getCacheOptions("categories")),
-  }
-
   const response = await fetchCategories<HttpTypes.StoreProductCategoryListResponse>(
     {
       fields:
         "*category_children, *products, *parent_category, *parent_category.parent_category",
       handle,
     },
-    next
+    { revalidate: 3600, tags: ["categories"] }
   )
 
   let category = response.product_categories[0]
@@ -102,7 +93,7 @@ export const getCategoryByHandle = async (categoryHandle: string[]) => {
           "*category_children, *products, *parent_category, *parent_category.parent_category",
         handle: fallbackHandle,
       },
-      next
+      { revalidate: 3600, tags: ["categories"] }
     )
 
     category = fallbackResponse.product_categories[0]
