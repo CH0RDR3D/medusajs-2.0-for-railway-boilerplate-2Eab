@@ -132,14 +132,7 @@ export default async function Footer() {
                   </a>
                 </li>
                 <li>
-                  <a
-                    href="https://github.com/medusajs/nextjs-starter-medusa"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="hover:text-ui-fg-base"
-                  >
-                    Source code
-                  </a>
+                  <span className="hover:text-ui-fg-base">Source code</span>
                 </li>
               </ul>
             </div>

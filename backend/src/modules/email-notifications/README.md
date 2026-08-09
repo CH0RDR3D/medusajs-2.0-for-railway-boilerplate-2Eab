@@ -152,10 +152,10 @@ In the original module, you're limited to just `subject`, `from`, `to`, the body
 only send HTML, which means you have to render the email body using `@react-email/render` instead of using the
 `react` email option which renders it for you.
 
-### Medusa
+### Platform Guides
 
-* Guide: [How to Create a Notification Provider Module](https://docs.medusajs.com/resources/references/notification-provider-module)
-* Getting Started: [Events & Subscribers](https://docs.medusajs.com/learn/basics/events-and-subscribers) 
+* Guide: Notification provider module reference
+* Getting Started: Events and subscribers
 
 ### React Email
 

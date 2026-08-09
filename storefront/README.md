@@ -1,5 +1,5 @@
 <p align="center">
-  <a href="https://www.medusajs.com">
+  <a href="#">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="https://user-images.githubusercontent.com/59018053/229103275-b5e482bb-4601-46e6-8142-244f531cebdb.svg">
     <source media="(prefers-color-scheme: light)" srcset="https://user-images.githubusercontent.com/59018053/229103726-e5b529a3-9b3f-4970-8a1f-c6af37f087bf.svg">
@@ -9,34 +9,28 @@
 </p>
 
 <h1 align="center">
-  Medusa Next.js Starter Template
+  SYA Storefront Template
 </h1>
 
 <p align="center">
 Combine Medusa's modules for your commerce backend with the newest Next.js 14 features for a performant storefront.</p>
 
 <p align="center">
-  <a href="https://github.com/medusajs/medusa/blob/master/CONTRIBUTING.md">
-    <img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat" alt="PRs welcome!" />
-  </a>
   <a href="https://discord.gg/xpCwq3Kfn8">
     <img src="https://img.shields.io/badge/chat-on%20discord-7289DA.svg" alt="Discord Chat" />
-  </a>
-  <a href="https://twitter.com/intent/follow?screen_name=medusajs">
-    <img src="https://img.shields.io/twitter/follow/medusajs.svg?label=Follow%20@medusajs" alt="Follow @medusajs" />
   </a>
 </p>
 
 ### Prerequisites
 
-To use the [Next.js Starter Template](https://medusajs.com/nextjs-commerce/), you should have a Medusa server running locally on port 9000.
+To use this Next.js storefront template, you should have a compatible backend server running locally on port 9000.
 For a quick setup, run:
 
 ```shell
 npx create-medusa-app@latest
 ```
 
-Check out [create-medusa-app docs](https://docs.medusajs.com/create-medusa-app) for more details and troubleshooting.
+Check the repository setup docs for more details and troubleshooting.
 
 # Overview
 
@@ -45,7 +39,7 @@ The Medusa Next.js Starter is built with:
 - [Next.js](https://nextjs.org/)
 - [Tailwind CSS](https://tailwindcss.com/)
 - [Typescript](https://www.typescriptlang.org/)
-- [Medusa](https://medusajs.com/)
+- Medusa-compatible backend
 
 Features include:
 
@@ -129,7 +123,7 @@ NEXT_PUBLIC_STRIPE_KEY=<your-stripe-public-key>
 NEXT_PUBLIC_PAYPAL_CLIENT_ID=<your-paypal-client-id>
 ```
 
-You will also need to setup the integrations in your Medusa server. See the [Medusa documentation](https://docs.medusajs.com) for more information on how to configure [Stripe](https://docs.medusajs.com/add-plugins/stripe) and [PayPal](https://docs.medusajs.com/add-plugins/paypal) in your Medusa project.
+You will also need to set up the integrations in your backend server for Stripe and PayPal.
 
 # Search integration
 
@@ -144,7 +138,7 @@ This starter is configured to support using the `medusa-search-meilisearch` plug
 }
 ```
 
-Before you can search you will need to install the plugin in your Medusa server, for a written guide on how to do this – [see our documentation](https://docs.medusajs.com/add-plugins/meilisearch).
+Before you can search, install and configure the MeiliSearch plugin in your backend server.
 
 The search components in this starter are developed with Algolia's `react-instant-search-hooks-web` library which should make it possible for you to seemlesly change your search provider to Algolia instead of MeiliSearch.
 
@@ -188,7 +182,7 @@ export async function search(query: string) {
 }
 ```
 
-After this you will need to set up Algolia with your Medusa server, and then you should be good to go. For a more thorough walkthrough of using Algolia with Medusa – [see our documentation](https://docs.medusajs.com/add-plugins/algolia), and the [documentation for using `react-instantsearch-hooks-web`](https://www.algolia.com/doc/guides/building-search-ui/getting-started/react-hooks/).
+After this you will need to set up Algolia with your backend server. For a deeper walkthrough, refer to the [documentation for using `react-instantsearch-hooks-web`](https://www.algolia.com/doc/guides/building-search-ui/getting-started/react-hooks/).
 
 ## App structure
 
@@ -274,7 +268,7 @@ The region will be decided as follows:
 
 - When deployed on Vercel and you're active in the user's current country, it will use the country code from the `x-vercel-ip-country` header.
 - Else, if you have defined a `NEXT_PUBLIC_DEFAULT_REGION` environment variable, it will redirect to that.
-- Else, it will redirect the user to the first region it finds on your Medusa server.
+- Else, it will redirect the user to the first region it finds on your backend server.
 
 If you want to use the `countryCode` param in your code, there's two ways to do that:
 
@@ -303,15 +297,9 @@ If you want to use the `countryCode` param in your code, there's two ways to do 
     ```
     
 
-The middleware also sets a cookie based on the onboarding status of a user. This is related to the Medusa Admin onboarding flow, and may be safely removed in your production storefront.
+The middleware also sets a cookie based on the onboarding status of a user, and may be safely removed in your production storefront.
 
 # Resources
-
-## Learn more about Medusa
-
-- [Website](https://www.medusajs.com/)
-- [GitHub](https://github.com/medusajs)
-- [Documentation](https://docs.medusajs.com/)
 
 ## Learn more about Next.js
 

@@ -1,12 +1,12 @@
 <p align="center">
-  <a href="https://www.medusajs.com">
+  <a href="#">
     <picture>
       <source media="(prefers-color-scheme: dark)" srcset="https://user-images.githubusercontent.com/59018053/229103275-b5e482bb-4601-46e6-8142-244f531cebdb.svg">
       <source media="(prefers-color-scheme: light)" srcset="https://user-images.githubusercontent.com/59018053/229103726-e5b529a3-9b3f-4970-8a1f-c6af37f087bf.svg">
       <img alt="Medusa logo" src="https://user-images.githubusercontent.com/59018053/229103726-e5b529a3-9b3f-4970-8a1f-c6af37f087bf.svg" width=100>
     </picture>
   </a>
-  <a href="https://railway.com/deploy/medusajs-2136-storefront-new">
+  <a href="https://railway.com/deploy">
     <picture>
       <source media="(prefers-color-scheme: dark)" srcset="https://railway.app/brand/logo-light.svg">
       <source media="(prefers-color-scheme: light)" srcset="https://railway.app/brand/logo-dark.svg">
@@ -16,7 +16,7 @@
 </p>
 
 <h2 align="center">
-  Prebaked medusajs 2.0 monorepo
+  Prebaked SYA Store monorepo
 </h2>
 <h4 align="center">
   Backend + Storefront + postgres + redis + S3 file storage + MeiliSearch
@@ -24,10 +24,7 @@
 <p align="center">
 Combine Medusa's modules for your commerce backend with the newest Next.js 14 features for a performant storefront.</p>
 
-<h2 align="center">
-  Need help?<br>
-  <a href="https://funkyton.com/medusajs-2-0-is-finally-here/">Step by step deploy guide, and video instructions</a>
-</h2>
+<h2 align="center">Need help? See repository docs and runbooks.</h2>
 
 <h3 align="center">
   NEW! Looking for medusa B2B? <br>
@@ -42,7 +39,7 @@ This boilerplate is a monorepo consisting of the officially released MedusaJS 2.
 Updated: to `version 2.17.2` 🥳
 
 ## Deploy with no manual setup in minutes
-[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/medusajs-2136-storefront-new?referralCode=-Yg50p)
+[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy)
 
 ![Railway MeduaJS Service overview](https://res-5.cloudinary.com/hczpmiapo/image/upload/q_auto/v1/ghost-blog-images/medusa-2-17-2-on-railway-service-overview-png.png?_a=BAMAPqiu0)
 
@@ -102,17 +99,4 @@ Video instructions: https://youtu.be/PPxenu7IjGM
 `npm run dev` or `pnpm dev` will run the storefront on uncompiled code, with hot-reloading as files are saved with changes.
 
 ## Useful resources
-- How to setup credit card payment with Stripe payment module: https://youtu.be/dcSOpIzc1Og
-- https://funkyton.com/medusajs-2-0-is-finally-here/#succuessfully-deployed-whats-next
-  
-<p align="center">
-  <a href="https://funkyton.com/">
-    <div style="text-align: center;">
-      A template by,
-      <br>
-      <picture>
-        <img alt="FUNKYTON logo" src="https://res-5.cloudinary.com/hczpmiapo/image/upload/q_auto/v1/ghost-blog-images/funkyton-logo.png" width=200>
-      </picture>
-    </div>
-  </a>
-</p>
+- How to set up credit card payment with Stripe payment module: https://youtu.be/dcSOpIzc1Og

@@ -24,7 +24,7 @@ export async function seedUser(email?: string, password?: string) {
     if (e instanceof AxiosError) {
       if (e.response && e.response.status) {
         const status = e.response.status
-        // https://docs.medusajs.com/api/store#customers_postcustomers
+        // Customer already exists
         if (status === 422) {
           return user
         }
