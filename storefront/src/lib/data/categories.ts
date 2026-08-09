@@ -1,6 +1,49 @@
-import { sdk } from "@lib/config"
 import { HttpTypes } from "@medusajs/types"
 import { getCacheOptions } from "./cookies"
+
+const getMedusaBackendUrl = () =>
+  process.env.NEXT_PUBLIC_MEDUSA_BACKEND_URL || "http://localhost:9000"
+
+const getPublishableApiKey = () =>
+  process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY || ""
+
+const fetchCategories = async <T,>(query: Record<string, unknown>, next: Record<string, unknown>) => {
+  const url = new URL(`${getMedusaBackendUrl()}/store/product-categories`)
+
+  Object.entries(query).forEach(([key, value]) => {
+    if (value == null || value === "") {
+      return
+    }
+
+    if (Array.isArray(value)) {
+      value.forEach((item) => {
+        if (item != null && item !== "") {
+          url.searchParams.append(key, String(item))
+        }
+      })
+      return
+    }
+
+    url.searchParams.set(key, String(value))
+  })
+
+  const response = await fetch(url.toString(), {
+    method: "GET",
+    headers: getPublishableApiKey()
+      ? {
+          "x-publishable-api-key": getPublishableApiKey(),
+        }
+      : undefined,
+    next,
+    cache: "force-cache",
+  })
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch categories: ${response.status}`)
+  }
+
+  return (await response.json()) as T
+}
 
 export const listCategories = async (query?: Record<string, unknown>) => {
   const next = {
@@ -9,21 +52,19 @@ export const listCategories = async (query?: Record<string, unknown>) => {
 
   const limit = query?.limit || 100
 
-  return sdk.client
-    .fetch<{ product_categories: HttpTypes.StoreProductCategory[] }>(
-      "/store/product-categories",
-      {
-        query: {
-          fields:
-            "*category_children, *products, *parent_category, *parent_category.parent_category",
-          limit,
-          ...query,
-        },
-        next,
-        cache: "force-cache",
-      }
-    )
-    .then(({ product_categories }) => product_categories)
+  const { product_categories } = await fetchCategories<{
+    product_categories: HttpTypes.StoreProductCategory[]
+  }>(
+    {
+      fields:
+        "*category_children, *products, *parent_category, *parent_category.parent_category",
+      limit,
+      ...query,
+    },
+    next
+  )
+
+  return product_categories
 }
 
 export const getCategoriesList = async (offset = 0, limit = 100) => {
@@ -43,33 +84,25 @@ export const getCategoryByHandle = async (categoryHandle: string[]) => {
     ...(await getCacheOptions("categories")),
   }
 
-  const response = await sdk.client.fetch<HttpTypes.StoreProductCategoryListResponse>(
-    `/store/product-categories`,
+  const response = await fetchCategories<HttpTypes.StoreProductCategoryListResponse>(
     {
-      query: {
-        fields:
-          "*category_children, *products, *parent_category, *parent_category.parent_category",
-        handle,
-      },
-      next,
-      cache: "force-cache",
-    }
+      fields:
+        "*category_children, *products, *parent_category, *parent_category.parent_category",
+      handle,
+    },
+    next
   )
 
   let category = response.product_categories[0]
 
   if (!category && fallbackHandle && fallbackHandle !== handle) {
-    const fallbackResponse = await sdk.client.fetch<HttpTypes.StoreProductCategoryListResponse>(
-      `/store/product-categories`,
+    const fallbackResponse = await fetchCategories<HttpTypes.StoreProductCategoryListResponse>(
       {
-        query: {
-          fields:
-            "*category_children, *products, *parent_category, *parent_category.parent_category",
-          handle: fallbackHandle,
-        },
-        next,
-        cache: "force-cache",
-      }
+        fields:
+          "*category_children, *products, *parent_category, *parent_category.parent_category",
+        handle: fallbackHandle,
+      },
+      next
     )
 
     category = fallbackResponse.product_categories[0]
