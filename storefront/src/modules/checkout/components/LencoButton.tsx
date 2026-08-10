@@ -42,6 +42,7 @@ export default function LencoButton({ cart }: { cart: HttpTypes.StoreCart }) {
     // Check synchronously on first render — handles hot-reload / already-loaded case
     typeof window !== "undefined" && !!window.LencoPay
   )
+  const [runtimePublicKey, setRuntimePublicKey] = useState<string>("")
   const [loadError, setLoadError] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
@@ -134,6 +135,27 @@ export default function LencoButton({ cart }: { cart: HttpTypes.StoreCart }) {
     return () => stopPolling()
   }, [stopPolling])
 
+  useEffect(() => {
+    let mounted = true
+
+    fetch("/api/lenco/config")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!mounted) return
+        const key = (data?.publicKey || "").trim()
+        if (key) {
+          setRuntimePublicKey(key)
+        }
+      })
+      .catch(() => {
+        // Keep silent: NEXT_PUBLIC_* env vars are still used as direct fallback.
+      })
+
+    return () => {
+      mounted = false
+    }
+  }, [])
+
   const handlePayment = () => {
     if (!window.LencoPay) {
       console.error("[Lenco] handlePayment called but window.LencoPay is not ready.")
@@ -154,11 +176,13 @@ export default function LencoButton({ cart }: { cart: HttpTypes.StoreCart }) {
     const lastName = cart.shipping_address?.last_name || ""
     const phone = cart.shipping_address?.phone || ""
     const publicKey =
-      process.env.NEXT_PUBLIC_LENCO_KEY || process.env.NEXT_PUBLIC_LENCO_PUBLIC_KEY
+      runtimePublicKey ||
+      process.env.NEXT_PUBLIC_LENCO_KEY ||
+      process.env.NEXT_PUBLIC_LENCO_PUBLIC_KEY
 
     if (!publicKey) {
       console.error("[Lenco] NEXT_PUBLIC_LENCO_KEY is not set.")
-      setError("Lenco public key is not configured. Contact support.")
+      setError("Lenco public key is missing. Set NEXT_PUBLIC_LENCO_KEY or LENCO_PUBLIC_KEY.")
       setSubmitting(false)
       return
     }

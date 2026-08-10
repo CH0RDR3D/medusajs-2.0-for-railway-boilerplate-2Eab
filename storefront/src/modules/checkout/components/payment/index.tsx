@@ -4,7 +4,8 @@ import { useEffect, useState } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import ErrorMessage from "@modules/checkout/components/error-message"
 import { CheckCircleSolid } from "@medusajs/icons"
-import { Button, Heading, Text, clx } from "@medusajs/ui"
+import { Heading, Text, clx } from "@medusajs/ui"
+import PaymentButton from "@modules/checkout/components/payment-button"
 
 import Divider from "@modules/common/components/divider"
 
@@ -15,7 +16,6 @@ const Payment = ({
   cart: any
   availablePaymentMethods: any[]
 }) => {
-  const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const searchParams = useSearchParams()
@@ -36,12 +36,6 @@ const Payment = ({
     router.push(pathname + "?step=payment", {
       scroll: false,
     })
-  }
-
-  const handleSubmit = async () => {
-    setIsLoading(true)
-    router.push(pathname + "?step=review", { scroll: false })
-    setIsLoading(false)
   }
 
   useEffect(() => {
@@ -106,16 +100,11 @@ const Payment = ({
             data-testid="payment-method-error-message"
           />
 
-          <Button
-            size="large"
-            className="mt-6"
-            onClick={handleSubmit}
-            isLoading={isLoading}
-            disabled={!paymentReady && !paidByGiftcard}
-            data-testid="submit-payment-button"
-          >
-            Continue to review
-          </Button>
+          {!paidByGiftcard && (
+            <div className="mt-6" data-testid="pay-now-with-lenco-container">
+              <PaymentButton cart={cart} data-testid="pay-now-with-lenco-button" />
+            </div>
+          )}
         </div>
 
         <div className={isOpen ? "hidden" : "block"}>
