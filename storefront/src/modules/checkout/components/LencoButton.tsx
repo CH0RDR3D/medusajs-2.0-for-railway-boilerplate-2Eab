@@ -53,8 +53,35 @@ export default function LencoButton({ cart }: { cart: HttpTypes.StoreCart }) {
     }
   }, [])
 
+  const injectLencoScript = useCallback(() => {
+    const existing =
+      document.getElementById(LENCO_SCRIPT_ID) ||
+      document.querySelector(`script[src="${LENCO_SCRIPT_SRC}"]`)
+
+    if (existing) {
+      return
+    }
+
+    const script = document.createElement("script")
+    script.id = LENCO_SCRIPT_ID
+    script.src = LENCO_SCRIPT_SRC
+    script.async = true
+    script.onload = () => {
+      if (window.LencoPay) {
+        setScriptReady(true)
+      }
+    }
+    script.onerror = () => {
+      setLoadError(
+        "Failed to load Lenco payment script. Check your network connection and try refreshing."
+      )
+    }
+    document.head.appendChild(script)
+  }, [])
+
   const startPolling = useCallback((timeoutMs = 8000) => {
     stopPolling()
+    injectLencoScript()
     const deadline = Date.now() + timeoutMs
 
     pollRef.current = setInterval(() => {
@@ -70,7 +97,7 @@ export default function LencoButton({ cart }: { cart: HttpTypes.StoreCart }) {
         )
       }
     }, 150)
-  }, [stopPolling])
+  }, [injectLencoScript, stopPolling])
 
   useEffect(() => {
     // Already ready — nothing to do
@@ -94,35 +121,13 @@ export default function LencoButton({ cart }: { cart: HttpTypes.StoreCart }) {
 
     // Script not yet in DOM — inject it ourselves
     console.log("[Lenco] Injecting inline script:", LENCO_SCRIPT_SRC)
-    const script = document.createElement("script")
-    script.id = LENCO_SCRIPT_ID
-    script.src = LENCO_SCRIPT_SRC
-    script.async = true
-
-    script.onload = () => {
-      console.log("[Lenco] Script loaded. window.LencoPay:", !!window.LencoPay)
-      // window.LencoPay is set synchronously by the script, check immediately
-      if (window.LencoPay) {
-        setScriptReady(true)
-      } else {
-        // Fallback: poll briefly in case of any edge-case delay
-        startPolling(3000)
-      }
-    }
-
-    script.onerror = () => {
-      console.error("[Lenco] Failed to load script from:", LENCO_SCRIPT_SRC)
-      setLoadError(
-        "Failed to load Lenco payment script. Check your network connection and try refreshing."
-      )
-    }
-
-    document.head.appendChild(script)
+    injectLencoScript()
+    startPolling(3000)
 
     return () => {
       stopPolling()
     }
-  }, [startPolling, stopPolling])
+  }, [injectLencoScript, startPolling, stopPolling])
 
   // Cleanup on unmount
   useEffect(() => {
@@ -132,7 +137,10 @@ export default function LencoButton({ cart }: { cart: HttpTypes.StoreCart }) {
   const handlePayment = () => {
     if (!window.LencoPay) {
       console.error("[Lenco] handlePayment called but window.LencoPay is not ready.")
-      setError("Payment widget is not ready yet. Please wait a moment and try again.")
+      setError("Initializing payment widget. Please tap again in a moment.")
+      setScriptReady(false)
+      setLoadError(null)
+      startPolling(8000)
       return
     }
 
@@ -248,19 +256,8 @@ export default function LencoButton({ cart }: { cart: HttpTypes.StoreCart }) {
           onClick={() => {
             setLoadError(null)
             setScriptReady(false)
-            // Re-inject script
-            const old = document.getElementById(LENCO_SCRIPT_ID)
-            if (old) old.remove()
-            const script = document.createElement("script")
-            script.id = LENCO_SCRIPT_ID
-            script.src = LENCO_SCRIPT_SRC
-            script.async = true
-            script.onload = () => {
-              if (window.LencoPay) setScriptReady(true)
-              else startPolling(3000)
-            }
-            script.onerror = () => setLoadError("Failed to load payment widget again. Try refreshing.")
-            document.head.appendChild(script)
+            resetLencoPay()
+            startPolling(5000)
           }}
           className="text-sm text-blue-600 hover:underline"
         >
@@ -274,7 +271,7 @@ export default function LencoButton({ cart }: { cart: HttpTypes.StoreCart }) {
     <div className="flex flex-col items-center w-full">
       <button
         onClick={handlePayment}
-        disabled={submitting || !scriptReady}
+        disabled={submitting}
         className="w-full flex items-center justify-center gap-x-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
       >
         {submitting ? (
