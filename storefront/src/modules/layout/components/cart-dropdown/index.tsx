@@ -110,63 +110,67 @@ const CartDropdown = ({
                         ? -1
                         : 1
                     })
-                    .map((item) => (
-                      <div
-                        className="grid grid-cols-[122px_1fr] gap-x-4"
-                        key={item.id}
-                        data-testid="cart-item"
-                      >
-                        <LocalizedClientLink
-                          href={`/products/${item.variant?.product?.handle}`}
-                          className="w-24"
+                    .map((item) => {
+                      const product = item.product || item.variant?.product
+
+                      return (
+                        <div
+                          className="grid grid-cols-[122px_1fr] gap-x-4"
+                          key={item.id}
+                          data-testid="cart-item"
                         >
-                          <Thumbnail
-                            thumbnail={item.variant?.product?.thumbnail}
-                            images={item.variant?.product?.images}
-                            size="square"
-                          />
-                        </LocalizedClientLink>
-                        <div className="flex flex-col justify-between flex-1">
-                          <div className="flex flex-col flex-1">
-                            <div className="flex items-start justify-between">
-                              <div className="flex flex-col overflow-ellipsis whitespace-nowrap mr-4 w-[180px]">
-                                <h3 className="text-base-regular overflow-hidden text-ellipsis">
-                                  <LocalizedClientLink
-                                    href={`/products/${item.variant?.product?.handle}`}
-                                    data-testid="product-link"
+                          <LocalizedClientLink
+                            href={`/products/${product?.handle}`}
+                            className="w-24"
+                          >
+                            <Thumbnail
+                              thumbnail={product?.thumbnail}
+                              images={product?.images}
+                              size="square"
+                            />
+                          </LocalizedClientLink>
+                          <div className="flex flex-col justify-between flex-1">
+                            <div className="flex flex-col flex-1">
+                              <div className="flex items-start justify-between">
+                                <div className="flex flex-col overflow-ellipsis whitespace-nowrap mr-4 w-[180px]">
+                                  <h3 className="text-base-regular overflow-hidden text-ellipsis">
+                                    <LocalizedClientLink
+                                      href={`/products/${product?.handle}`}
+                                      data-testid="product-link"
+                                    >
+                                      {item.title}
+                                    </LocalizedClientLink>
+                                  </h3>
+                                  <LineItemOptions
+                                    variant={item.variant}
+                                    data-testid="cart-item-variant"
+                                    data-value={item.variant}
+                                  />
+                                  <span
+                                    data-testid="cart-item-quantity"
+                                    data-value={item.quantity}
                                   >
-                                    {item.title}
-                                  </LocalizedClientLink>
-                                </h3>
-                                <LineItemOptions
-                                  variant={item.variant}
-                                  data-testid="cart-item-variant"
-                                  data-value={item.variant}
-                                />
-                                <span
-                                  data-testid="cart-item-quantity"
-                                  data-value={item.quantity}
-                                >
-                                  Quantity: {item.quantity}
-                                </span>
-                              </div>
-                              <div className="flex justify-end">
-                                <LineItemPrice item={item} style="tight" currencyCode={cartState?.currency_code ?? "zmw"} />
+                                    Quantity: {item.quantity}
+                                  </span>
+                                </div>
+                                <div className="flex justify-end">
+                                  <LineItemPrice item={item} style="tight" currencyCode={cartState?.currency_code ?? "zmw"} />
+                                </div>
                               </div>
                             </div>
+                            <DeleteButton
+                              id={item.id}
+                              variantId={item.variant_id}
+                              productId={item.product_id}
+                              className="mt-1"
+                              data-testid="cart-item-remove-button"
+                            >
+                              Remove
+                            </DeleteButton>
                           </div>
-                          <DeleteButton
-                            id={item.id}
-                            variantId={item.variant_id}
-                            productId={item.product_id}
-                            className="mt-1"
-                            data-testid="cart-item-remove-button"
-                          >
-                            Remove
-                          </DeleteButton>
                         </div>
-                      </div>
-                    ))}
+                      )
+                    })}
                 </div>
                 <div className="p-4 flex flex-col gap-y-4 text-small-regular">
                   <div className="flex items-center justify-between">

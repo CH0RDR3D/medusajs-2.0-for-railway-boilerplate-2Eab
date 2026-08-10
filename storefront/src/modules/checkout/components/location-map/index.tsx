@@ -109,7 +109,7 @@ const LocationMap = ({ apiKey, location, onResolveLocation }: LocationMapProps) 
 
   useEffect(() => {
     if (!apiKey) {
-      setError("NEXT_PUBLIC_GOOGLE_MAPS_KEY is missing")
+      setError("NEXT_PUBLIC_GOOGLE_MAPS_API_KEY is missing")
       return
     }
 

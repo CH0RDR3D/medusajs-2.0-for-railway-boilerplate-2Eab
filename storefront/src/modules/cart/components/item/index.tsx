@@ -13,6 +13,7 @@ import LineItemUnitPrice from "@modules/common/components/line-item-unit-price"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import Spinner from "@modules/common/icons/spinner"
 import Thumbnail from "@modules/products/components/thumbnail"
+import { useRouter } from "next/navigation"
 import { useState } from "react"
 
 type ItemProps = {
@@ -25,19 +26,31 @@ const Item = ({ item, type = "full", currencyCode }: ItemProps) => {
   const activeCurrencyCode = currencyCode || (item.variant as any)?.prices?.[0]?.currency_code || "zmw"
   const [updating, setUpdating] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const router = useRouter()
 
-  const { handle } = item.variant?.product ?? {}
+  const product = item.product || item.variant?.product
+  const { handle } = product ?? {}
 
   const changeQuantity = async (quantity: number) => {
+    if (!Number.isFinite(quantity) || quantity < 1) {
+      setError("Invalid quantity selected")
+      return
+    }
+
     setError(null)
     setUpdating(true)
 
-    const message = await updateLineItem({
+    await updateLineItem({
       lineId: item.id,
       quantity,
+      variantId: item.variant_id,
+      productId: item.product_id,
     })
+      .then(() => {
+        router.refresh()
+      })
       .catch((err) => {
-        setError(err.message)
+        setError(err?.message || "Failed to update item quantity")
       })
       .finally(() => {
         setUpdating(false)
@@ -59,8 +72,8 @@ const Item = ({ item, type = "full", currencyCode }: ItemProps) => {
           })}
         >
           <Thumbnail
-            thumbnail={item.variant?.product?.thumbnail}
-            images={item.variant?.product?.images}
+            thumbnail={product?.thumbnail}
+            images={product?.images}
             size="square"
           />
         </LocalizedClientLink>
@@ -87,7 +100,7 @@ const Item = ({ item, type = "full", currencyCode }: ItemProps) => {
             />
             <CartItemSelect
               value={item.quantity}
-              onChange={(value) => changeQuantity(parseInt(value.target.value))}
+              onChange={(value) => changeQuantity(Number(value.target.value))}
               className="w-14 h-10 p-4"
               data-testid="product-select-button"
             >
@@ -102,10 +115,6 @@ const Item = ({ item, type = "full", currencyCode }: ItemProps) => {
                   </option>
                 )
               )}
-
-              <option value={1} key={1}>
-                1
-              </option>
             </CartItemSelect>
             {updating && <Spinner />}
           </div>

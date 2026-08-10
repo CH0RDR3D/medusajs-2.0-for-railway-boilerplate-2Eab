@@ -158,16 +158,30 @@ export async function addToCart({
     ...(await getAuthHeaders()),
   }
 
-  await sdk.store.cart
-    .createLineItem(
-      cart.id,
-      {
-        variant_id: variantId,
-        quantity,
-      },
-      {},
-      headers
-    )
+  const freshCart = await retrieveCartFresh(cart.id)
+  const existingLine = (freshCart.items || []).find(
+    (item) => item.variant_id === variantId
+  )
+
+  await (existingLine?.id
+    ? sdk.store.cart.updateLineItem(
+        cart.id,
+        existingLine.id,
+        {
+          quantity: existingLine.quantity + quantity,
+        },
+        {},
+        headers
+      )
+    : sdk.store.cart.createLineItem(
+        cart.id,
+        {
+          variant_id: variantId,
+          quantity,
+        },
+        {},
+        headers
+      ))
     .then(async () => {
       const cartCacheTag = await getCacheTag("carts")
       revalidateTag(cartCacheTag)
@@ -181,12 +195,20 @@ export async function addToCart({
 export async function updateLineItem({
   lineId,
   quantity,
+  variantId,
+  productId,
 }: {
   lineId: string
   quantity: number
+  variantId?: string
+  productId?: string
 }) {
   if (!lineId) {
     throw new Error("Missing lineItem ID when updating line item")
+  }
+
+  if (!Number.isFinite(quantity) || quantity < 1) {
+    throw new Error("Quantity must be at least 1")
   }
 
   const cartId = await getCartId()
@@ -199,16 +221,65 @@ export async function updateLineItem({
     ...(await getAuthHeaders()),
   }
 
-  await sdk.store.cart
-    .updateLineItem(cartId, lineId, { quantity }, {}, headers)
-    .then(async () => {
+  const freshCart = await retrieveCartFresh(cartId)
+  const resolvedLineId = resolveLatestLineItemId(freshCart, {
+    lineId,
+    variantId,
+    productId,
+  })
+
+  if (!resolvedLineId) {
+    throw new Error("Line item no longer exists in the cart")
+  }
+
+  try {
+    await sdk.store.cart.updateLineItem(
+      cartId,
+      resolvedLineId,
+      { quantity },
+      {},
+      headers
+    )
+
+    const cartCacheTag = await getCacheTag("carts")
+    revalidateTag(cartCacheTag)
+
+    const fulfillmentCacheTag = await getCacheTag("fulfillment")
+    revalidateTag(fulfillmentCacheTag)
+  } catch (error: any) {
+    const message = String(error?.message || "")
+
+    if (message.toLowerCase().includes("was not found")) {
+      const latestCart = await retrieveCartFresh(cartId)
+      const retryLineId = resolveLatestLineItemId(latestCart, {
+        lineId,
+        variantId,
+        productId,
+      })
+
+      if (!retryLineId) {
+        throw new Error("Line item no longer exists in the cart")
+      }
+
+      await sdk.store.cart.updateLineItem(
+        cartId,
+        retryLineId,
+        { quantity },
+        {},
+        headers
+      )
+
       const cartCacheTag = await getCacheTag("carts")
       revalidateTag(cartCacheTag)
 
       const fulfillmentCacheTag = await getCacheTag("fulfillment")
       revalidateTag(fulfillmentCacheTag)
-    })
-    .catch(medusaError)
+
+      return
+    }
+
+    medusaError(error)
+  }
 }
 
 type RemoveFromCartInput = {
@@ -226,7 +297,8 @@ const retrieveCartFresh = async (cartId: string) => {
     .fetch<HttpTypes.StoreCartResponse>(`/store/carts/${cartId}`, {
       method: "GET",
       query: {
-        fields: "id,*items",
+        fields:
+          "id,*items,items.id,items.variant_id,items.product_id,items.quantity,*items.variant,*items.product",
       },
       headers,
       cache: "no-store",

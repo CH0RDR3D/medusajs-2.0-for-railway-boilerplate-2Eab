@@ -12,7 +12,19 @@ const ShippingAddress = ({
   customer: HttpTypes.StoreCustomer | null
   cart: HttpTypes.StoreCart | null
 }) => {
-  const [formData, setFormData] = useState<Record<string, any>>({})
+  const [formData, setFormData] = useState<Record<string, any>>({
+    "shipping_address.first_name": "",
+    "shipping_address.last_name": "",
+    "shipping_address.address_1": "",
+    "shipping_address.postal_code": "",
+    "shipping_address.city": "",
+    "shipping_address.country_code": "",
+    "shipping_address.province": "",
+    "shipping_address.phone": "",
+    "location.lat": "",
+    "location.lng": "",
+    email: "",
+  })
 
   const countriesInRegion = useMemo(
     () => cart?.region?.countries?.map((c) => c.iso_2),
@@ -96,11 +108,9 @@ const ShippingAddress = ({
           </p>
           <AddressSelect
             addresses={customer.addresses}
-            addressInput={
-              mapKeys(formData, (_, key) =>
-                key.replace("shipping_address.", "")
-              ) as HttpTypes.StoreCartAddress
-            }
+            addressInput={mapKeys(formData, (_, key) =>
+              key.replace("shipping_address.", "")
+            ) as HttpTypes.StoreCartAddress}
             onSelect={setFormAddress}
           />
         </Container>

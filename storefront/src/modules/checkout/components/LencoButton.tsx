@@ -2,8 +2,8 @@
 
 import { useEffect, useRef, useState, useCallback } from "react"
 import { HttpTypes } from "@medusajs/types"
-import { placeOrder } from "@lib/data/cart"
-import Spinner from "@modules/common/icons/spinner"
+import { placeOrder } from "../../../lib/data/cart"
+import Spinner from "../../common/icons/spinner"
 
 declare global {
   interface Window {
@@ -145,10 +145,11 @@ export default function LencoButton({ cart }: { cart: HttpTypes.StoreCart }) {
     const firstName = cart.shipping_address?.first_name || ""
     const lastName = cart.shipping_address?.last_name || ""
     const phone = cart.shipping_address?.phone || ""
-    const publicKey = process.env.NEXT_PUBLIC_LENCO_PUBLIC_KEY
+    const publicKey =
+      process.env.NEXT_PUBLIC_LENCO_KEY || process.env.NEXT_PUBLIC_LENCO_PUBLIC_KEY
 
     if (!publicKey) {
-      console.error("[Lenco] NEXT_PUBLIC_LENCO_PUBLIC_KEY is not set.")
+      console.error("[Lenco] NEXT_PUBLIC_LENCO_KEY is not set.")
       setError("Lenco public key is not configured. Contact support.")
       setSubmitting(false)
       return
@@ -224,7 +225,7 @@ export default function LencoButton({ cart }: { cart: HttpTypes.StoreCart }) {
         console.log("[Lenco] onConfirmationPending — placing order optimistically for mobile money.")
         // Mobile money payments may be pending — place order optimistically,
         // the webhook will update the status server-side
-        placeOrder().catch((err) => {
+        placeOrder().catch((err: any) => {
           console.error("[Lenco] placeOrder failed after confirmation pending:", err)
           setError(err.message)
           setSubmitting(false)

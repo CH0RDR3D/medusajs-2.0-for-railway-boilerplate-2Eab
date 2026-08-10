@@ -13,6 +13,8 @@ const Review = ({ cart }: { cart: any }) => {
 
   const paidByGiftcard =
     cart?.gift_cards && cart?.gift_cards?.length > 0 && cart?.total === 0
+  const isPickup = Boolean((cart?.metadata as any)?.is_pickup)
+  const hasShippingMethod = (cart?.shipping_methods?.length ?? 0) > 0
 
   const hasLocation = useMemo(() => {
     if (typeof window === "undefined") {
@@ -25,8 +27,8 @@ const Review = ({ cart }: { cart: any }) => {
   const previousStepsCompleted =
     cart.shipping_address &&
     hasLocation &&
-    cart.shipping_methods.length > 0 &&
-    (cart.payment_collection || paidByGiftcard)
+    (isPickup || hasShippingMethod) &&
+    (paidByGiftcard || cart.total >= 0)
 
   return (
     <div className="bg-[var(--surface-card)]">

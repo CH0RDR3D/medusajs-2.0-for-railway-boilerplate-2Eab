@@ -31,6 +31,7 @@ const OptionSelect: React.FC<OptionSelectProps> = ({
         {filteredOptions?.map((v) => {
           return (
             <button
+              type="button"
               onClick={() => updateOption(option.title ?? "", v ?? "")}
               key={v}
               className={clx(

@@ -1,6 +1,7 @@
 import { removeFromCart } from "@lib/data/cart"
 import { Spinner, Trash } from "@medusajs/icons"
 import { clx } from "@modules/common/components/ui"
+import { useRouter } from "next/navigation"
 import { useState } from "react"
 
 const DeleteButton = ({
@@ -19,6 +20,7 @@ const DeleteButton = ({
 } & React.ButtonHTMLAttributes<HTMLButtonElement>) => {
   const [error, setError] = useState<string | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
+  const router = useRouter()
 
   const handleDelete = async (id: string) => {
     setError(null)
@@ -28,10 +30,16 @@ const DeleteButton = ({
       lineId: id,
       variantId,
       productId,
-    }).catch((err) => {
-      setError(err?.message || "Failed to remove item from cart")
     })
-    setIsDeleting(false)
+      .then(() => {
+        router.refresh()
+      })
+      .catch((err) => {
+        setError(err?.message || "Failed to remove item from cart")
+      })
+      .finally(() => {
+        setIsDeleting(false)
+      })
   }
 
   return (
@@ -42,6 +50,7 @@ const DeleteButton = ({
       )}
     >
       <button
+        type="button"
         className="flex gap-x-1 text-ui-fg-subtle hover:text-ui-fg-base cursor-pointer"
         onClick={() => handleDelete(id)}
         disabled={isDeleting}

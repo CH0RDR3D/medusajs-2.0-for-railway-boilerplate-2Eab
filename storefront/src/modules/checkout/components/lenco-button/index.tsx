@@ -16,8 +16,8 @@ const LencoButton = ({ disabled, isLoading, onClick }: LencoButtonProps) => {
   useEffect(() => {
     try {
       const timer = window.setTimeout(() => {
-        if (!process.env.NEXT_PUBLIC_LENCO_PUBLIC_KEY) {
-          console.error("Lenco init warning: NEXT_PUBLIC_LENCO_PUBLIC_KEY is missing, using fallback mode")
+        if (!process.env.NEXT_PUBLIC_LENCO_KEY && !process.env.NEXT_PUBLIC_LENCO_PUBLIC_KEY) {
+          console.error("Lenco init warning: NEXT_PUBLIC_LENCO_KEY is missing, using fallback mode")
         }
         setIsInitializing(false)
       }, 900)

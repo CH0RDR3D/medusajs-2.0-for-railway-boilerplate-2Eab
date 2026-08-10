@@ -16,20 +16,23 @@ const PaymentButton: React.FC<PaymentButtonProps> = ({ cart }) => {
     const shipping = cart.shipping_address
     const hasName = Boolean(shipping?.first_name?.trim() && shipping?.last_name?.trim())
     const hasPhone = Boolean(shipping?.phone?.trim())
+    const isPickup = Boolean((cart.metadata as any)?.is_pickup)
     const hasDelivery = Boolean((cart.shipping_methods?.length ?? 0) > 0)
 
     const email = cart.email?.trim()
     const emailValid = !email || EMAIL_REGEX.test(email)
 
     if (typeof window === "undefined") {
-      return hasName && hasPhone && hasDelivery && emailValid
+      return hasName && hasPhone && (isPickup || hasDelivery) && emailValid
     }
 
     const lat = Number(sessionStorage.getItem("checkout_location_lat") || (cart.metadata as any)?.lat)
     const lng = Number(sessionStorage.getItem("checkout_location_lng") || (cart.metadata as any)?.lng)
     const hasLocation = (Number.isFinite(lat) && lat !== 0) && (Number.isFinite(lng) && lng !== 0)
 
-    return hasName && hasPhone && hasDelivery && hasLocation && emailValid
+    const locationReady = isPickup || hasLocation
+
+    return hasName && hasPhone && (isPickup || hasDelivery) && locationReady && emailValid
   }, [cart])
 
   if (!readyForPayment) {
@@ -45,7 +48,7 @@ const PaymentButton: React.FC<PaymentButtonProps> = ({ cart }) => {
           Pay with Lenco
         </button>
         <p className="mt-2 text-xs text-zinc-500 text-center font-medium">
-          Please complete your contact info, shipping method, and Google Maps location to pay.
+          Please complete your contact info and Google Maps location to pay.
         </p>
       </div>
     )

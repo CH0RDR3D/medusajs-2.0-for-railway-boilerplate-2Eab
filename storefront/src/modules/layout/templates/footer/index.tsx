@@ -121,15 +121,12 @@ export default async function Footer() {
                   </a>
                 </li>
                 <li>
-                  <a
-                    href=""
-                    target="_blank"
-                    href="storefront/src/modules/customer-service/components/customer-service-view.tsx"
-                    rel="noreferrer"
+                  <LocalizedClientLink
+                    href="/customer-care"
                     className="hover:text-ui-fg-base"
                   >
-                    Documentation
-                  </a>
+                    Customer Care
+                  </LocalizedClientLink>
                 </li>
                 <li>
                   <span className="hover:text-ui-fg-base">Source code</span>

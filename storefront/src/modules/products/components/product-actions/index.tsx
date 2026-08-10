@@ -2,7 +2,7 @@
 
 import { Button } from "@medusajs/ui"
 import { isEqual } from "lodash"
-import { useParams } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
 import { useEffect, useMemo, useRef, useState } from "react"
 
 import { useIntersection } from "@lib/hooks/use-in-view"
@@ -35,8 +35,10 @@ export default function ProductActions({
   disabled,
 }: ProductActionsProps) {
   const [options, setOptions] = useState<Record<string, string | undefined>>({})
+  const [quantity, setQuantity] = useState(1)
   const [isAdding, setIsAdding] = useState(false)
   const countryCode = useParams().countryCode as string
+  const router = useRouter()
 
   // If there is only 1 variant, preselect the options
   useEffect(() => {
@@ -103,6 +105,22 @@ export default function ProductActions({
     return false
   }, [selectedVariant])
 
+  const maxQuantity = useMemo(() => {
+    if (!selectedVariant) {
+      return 10
+    }
+
+    if (!selectedVariant.manage_inventory || selectedVariant.allow_backorder) {
+      return 10
+    }
+
+    return Math.max(1, Math.min(selectedVariant.inventory_quantity || 1, 10))
+  }, [selectedVariant])
+
+  useEffect(() => {
+    setQuantity((current) => Math.min(current, maxQuantity))
+  }, [maxQuantity])
+
   const actionsRef = useRef<HTMLDivElement>(null)
 
   const inView = useIntersection(actionsRef, "0px")
@@ -113,13 +131,18 @@ export default function ProductActions({
 
     setIsAdding(true)
 
-    await addToCart({
-      variantId: selectedVariant.id,
-      quantity: 1,
-      countryCode,
-    })
-
-    setIsAdding(false)
+    try {
+      await addToCart({
+        variantId: selectedVariant.id,
+        quantity,
+        countryCode,
+      })
+      router.refresh()
+    } catch (error) {
+      console.error("Failed to add item to cart", error)
+    } finally {
+      setIsAdding(false)
+    }
   }
 
   return (
@@ -148,6 +171,31 @@ export default function ProductActions({
         </div>
 
         <ProductPrice product={product} variant={selectedVariant} />
+
+        <div className="flex items-center gap-3">
+          <label
+            htmlFor="product-quantity"
+            className="text-small-regular text-ui-fg-subtle"
+          >
+            Quantity
+          </label>
+          <select
+            id="product-quantity"
+            value={quantity}
+            onChange={(event) => setQuantity(Number(event.target.value))}
+            disabled={!!disabled || isAdding || !selectedVariant || !inStock}
+            className="h-10 min-w-20 rounded-md border border-ui-border-base bg-transparent px-3 text-ui-fg-base"
+            data-testid="product-quantity-select"
+          >
+            {Array.from({ length: maxQuantity }, (_, index) => index + 1).map(
+              (value) => (
+                <option value={value} key={value}>
+                  {value}
+                </option>
+              )
+            )}
+          </select>
+        </div>
 
         <Button
           onClick={handleAddToCart}
