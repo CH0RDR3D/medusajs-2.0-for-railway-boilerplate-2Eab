@@ -1,6 +1,7 @@
 import { Suspense } from "react"
 
 import { listCategories } from "@lib/data/categories"
+import { listCollections } from "@lib/data/collections"
 import { listRegions } from "@lib/data/regions"
 import { StoreRegion } from "@medusajs/types"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
@@ -22,10 +23,13 @@ import Logo from "@modules/layout/components/logo"
  *   — categories & search collapse into the SideMenu drawer
  */
 export default async function Nav() {
-  const [regions, categories] = await Promise.all([
+  const [regions, categories, collectionResult] = await Promise.all([
     listRegions().then((regions: StoreRegion[]) => regions),
     listCategories().catch(() => []),
+    listCollections({ limit: 6 }).catch(() => ({ collections: [], count: 0 })),
   ])
+
+  const collections = collectionResult.collections ?? []
 
   return (
     /* Sticky wrapper — sits at viewport top, above everything */
@@ -69,7 +73,7 @@ export default async function Nav() {
 
           {/* ── Category links (desktop only) ── */}
           <div className="hidden small:flex items-center">
-            <NavCategories categories={categories} />
+            <NavCategories categories={categories} collections={collections} />
           </div>
 
           {/* ── Right cluster: Account, Theme toggle, Cart ── */}
