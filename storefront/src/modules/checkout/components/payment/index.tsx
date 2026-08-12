@@ -4,8 +4,9 @@ import { useEffect, useState } from "react"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import ErrorMessage from "@modules/checkout/components/error-message"
 import { CheckCircleSolid } from "@medusajs/icons"
-import { Heading, Text, clx } from "@medusajs/ui"
+import { Heading, Text, clx, Button } from "@medusajs/ui"
 import PaymentButton from "@modules/checkout/components/payment-button"
+import { placeOrder } from "@lib/data/cart"
 
 import Divider from "@modules/common/components/divider"
 
@@ -17,6 +18,7 @@ const Payment = ({
   availablePaymentMethods: any[]
 }) => {
   const [error, setError] = useState<string | null>(null)
+  const [submitting, setSubmitting] = useState(false)
 
   const searchParams = useSearchParams()
   const router = useRouter()
@@ -38,6 +40,15 @@ const Payment = ({
     })
   }
 
+  const handlePlaceOrder = async () => {
+    setSubmitting(true)
+    setError(null)
+    await placeOrder().catch((err) => {
+      setError(err?.message || "Failed to place order")
+      setSubmitting(false)
+    })
+  }
+
   useEffect(() => {
     setError(null)
   }, [isOpen])
@@ -55,7 +66,7 @@ const Payment = ({
             }
           )}
         >
-          Payment
+          Review & Payment
           {!isOpen && paymentReady && <CheckCircleSolid />}
         </Heading>
         {!isOpen && paymentReady && (
@@ -76,7 +87,7 @@ const Payment = ({
             <div className="rounded-rounded border border-[var(--surface-border)] p-4">
               <Text className="txt-medium-plus text-ui-fg-base">Payment provider</Text>
               <Text className="txt-medium text-ui-fg-subtle mt-1" data-testid="payment-method-summary">
-                Lenco
+                Lenco Pay by <span className="text-ui-fg-base">BROADWAY</span>
               </Text>
             </div>
           )}
@@ -101,9 +112,31 @@ const Payment = ({
           />
 
           {!paidByGiftcard && (
-            <div className="mt-6" data-testid="pay-now-with-lenco-container">
-              <PaymentButton cart={cart} data-testid="pay-now-with-lenco-button" />
+            <div className="mt-6">
+              <div className="flex items-start gap-x-1 w-full mb-6">
+                <div className="w-full">
+                  <Text className="txt-medium text-ui-fg-subtle mb-1">
+                    By clicking the pay button, you confirm that you have
+                    read, understand and accept our Terms of Use, Terms of Sale and
+                    Returns Policy and acknowledge that you have read SYA
+                    Store&apos;s Privacy Policy.
+                  </Text>
+                </div>
+              </div>
+              <PaymentButton cart={cart} data-testid="submit-order-button" />
             </div>
+          )}
+
+          {paidByGiftcard && (
+            <Button
+              size="large"
+              className="mt-6 w-full"
+              onClick={handlePlaceOrder}
+              isLoading={submitting}
+              data-testid="submit-order-button"
+            >
+              Place Order
+            </Button>
           )}
         </div>
 
@@ -118,7 +151,7 @@ const Payment = ({
                   className="txt-medium text-ui-fg-subtle"
                   data-testid="payment-method-summary"
                 >
-                  Lenco
+                  Lenco Cashless Pay
                 </Text>
               </div>
             </div>
