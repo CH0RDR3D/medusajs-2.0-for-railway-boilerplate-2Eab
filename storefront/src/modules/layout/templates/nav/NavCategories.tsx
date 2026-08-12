@@ -34,6 +34,7 @@ export default function NavCategories({
             px-3 py-1 text-xs font-medium rounded-md
             text-[var(--text-secondary)] hover:text-[var(--text-primary)]
             hover:bg-black/5 dark:hover:bg-white/8
+            focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:outline-none
             transition-all duration-150 flex-shrink-0 whitespace-nowrap
           "
         >
@@ -54,6 +55,7 @@ export default function NavCategories({
             inline-flex items-center gap-1 px-3 py-1 text-xs font-medium rounded-md
             text-[var(--text-secondary)] hover:text-[var(--text-primary)]
             hover:bg-black/5 dark:hover:bg-white/8 transition-all duration-150
+            focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:outline-none
           "
           aria-haspopup="menu"
           aria-label="Browse categories"
@@ -94,6 +96,7 @@ export default function NavCategories({
                   flex items-center rounded-lg px-2.5 py-2 text-xs
                   text-[var(--text-secondary)] hover:text-[var(--text-primary)]
                   hover:bg-black/5 dark:hover:bg-white/8
+                  focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:outline-none
                 "
                 role="menuitem"
               >
@@ -115,6 +118,7 @@ export default function NavCategories({
           flex-shrink-0 px-3 py-1 text-xs font-semibold rounded-md
           text-amber-500 hover:text-amber-400
           hover:bg-amber-400/10
+          focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:outline-none
           transition-all duration-150 whitespace-nowrap
         "
       >

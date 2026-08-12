@@ -55,9 +55,10 @@ export default async function Nav() {
           </div>
 */}
           {/* ── Logo ── */}
+          {/* ── Logo ── */}
           <LocalizedClientLink
             href="/"
-            className="flex-shrink-0 transition-opacity hover:opacity-85"
+            className="flex-shrink-0 transition-opacity hover:opacity-85 focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:outline-none rounded-md"
             data-testid="nav-store-link"
           >
             <Logo />
@@ -76,8 +77,8 @@ export default async function Nav() {
             <NavCategories categories={categories} collections={collections} />
           </div>
 
-          {/* ── Right cluster: Account, Theme toggle, Cart ── */}
-          <div className="flex items-center gap-x-3 flex-shrink-0 h-full">
+          {/* ── Right cluster: Account, Customer Care, Theme toggle, Cart ── */}
+          <div className="flex items-center gap-x-4 flex-shrink-0 h-full">
             {/* Account — desktop only */}
             <div className="hidden small:flex items-center">
               <LocalizedClientLink
@@ -86,6 +87,7 @@ export default async function Nav() {
                   flex items-center gap-1 text-xs font-medium
                   text-[var(--text-secondary)] hover:text-[var(--text-primary)]
                   transition-colors duration-200
+                  focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:outline-none rounded-md px-1.5 py-1
                 "
                 data-testid="nav-account-link"
               >
@@ -107,6 +109,35 @@ export default async function Nav() {
               </LocalizedClientLink>
             </div>
 
+            {/* Customer Care — desktop only */}
+            <div className="hidden small:flex items-center">
+              <LocalizedClientLink
+                href="/customer-care"
+                className="
+                  flex items-center gap-1 text-xs font-medium
+                  text-[var(--text-secondary)] hover:text-[var(--text-primary)]
+                  transition-colors duration-200
+                  focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:outline-none rounded-md px-1.5 py-1
+                "
+              >
+                {/* Support/chat icon */}
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  strokeWidth={1.5}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9 5.25h.008v.008H12v-.008z"
+                  />
+                </svg>
+                Customer Care
+              </LocalizedClientLink>
+            </div>
+
             {/* Theme toggle — always visible */}
             <ThemeToggle />
 
@@ -118,6 +149,7 @@ export default async function Nav() {
                     flex items-center gap-1 text-xs font-medium
                     text-[var(--text-secondary)] hover:text-[var(--text-primary)]
                     transition-colors duration-200
+                    focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:outline-none rounded-md px-1.5 py-1
                   "
                   href="/cart"
                   data-testid="nav-cart-link"

@@ -1,4 +1,4 @@
-import React from "react"
+import React, { Suspense } from "react"
 import { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { getCollectionByHandle } from "@lib/data/collections"
@@ -6,6 +6,7 @@ import { getProductsList } from "@lib/data/products"
 import { getRegion } from "@lib/data/regions"
 import { ProductCard } from "@modules/home/components/custom-home/Product-Grid"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
+import ProductSidebar from "@modules/store/components/ProductSidebar"
 
 type Props = {
   params: Promise<{ handle: string; countryCode: string }>
@@ -52,6 +53,55 @@ export default async function CollectionPage(props: Props) {
     },
   })
 
+  // Dynamic themed styles mapper for collection pages
+  const getCollectionTheme = (handleName: string) => {
+    const h = handleName.toLowerCase()
+    if (h.includes("summer")) {
+      return {
+        gradient: "linear-gradient(135deg, #1e1100 0%, #3a1e05 50%, #1e1100 100%)", // Warm sunset
+        border: "border-amber-500/30",
+        accentText: "text-amber-400",
+        badgeBg: "bg-amber-500/20 text-amber-300 border-amber-500/20",
+        glow: "radial-gradient(circle, rgba(251,191,36,0.15), transparent)",
+      }
+    } else if (h.includes("winter") || h.includes("cool")) {
+      return {
+        gradient: "linear-gradient(135deg, #09132c 0%, #0d2a5c 50%, #09132c 100%)", // Arctic blue
+        border: "border-blue-500/30",
+        accentText: "text-blue-400",
+        badgeBg: "bg-blue-500/20 text-blue-300 border-blue-500/20",
+        glow: "radial-gradient(circle, rgba(59,130,246,0.15), transparent)",
+      }
+    } else if (h.includes("deals") || h.includes("sale") || h.includes("discount")) {
+      return {
+        gradient: "linear-gradient(135deg, #1f0808 0%, #450a0a 50%, #1f0808 100%)", // Crimson red
+        border: "border-red-500/30",
+        accentText: "text-red-400",
+        badgeBg: "bg-red-500/20 text-red-300 border-red-500/20",
+        glow: "radial-gradient(circle, rgba(239,68,68,0.15), transparent)",
+      }
+    } else if (h.includes("new") || h.includes("latest") || h.includes("featured")) {
+      return {
+        gradient: "linear-gradient(135deg, #130a2a 0%, #2e1065 50%, #130a2a 100%)", // Deep violet
+        border: "border-violet-500/30",
+        accentText: "text-violet-400",
+        badgeBg: "bg-violet-500/20 text-violet-300 border-violet-500/20",
+        glow: "radial-gradient(circle, rgba(139,92,246,0.15), transparent)",
+      }
+    } else {
+      // Default premium theme
+      return {
+        gradient: "linear-gradient(135deg, #111827 0%, #1f2937 50%, #111827 100%)", // Dark gray
+        border: "border-gray-500/30",
+        accentText: "text-gray-300",
+        badgeBg: "bg-gray-500/20 text-gray-300 border-gray-500/20",
+        glow: "radial-gradient(circle, rgba(156,163,175,0.1), transparent)",
+      }
+    }
+  }
+
+  const theme = getCollectionTheme(handle)
+
   return (
     <div className="min-h-screen py-10" style={{ background: "var(--bg-base)" }}>
       <div className="content-container">
@@ -65,57 +115,69 @@ export default async function CollectionPage(props: Props) {
           <span className="text-[var(--text-primary)] font-medium">{collection.title}</span>
         </div>
 
-        {/* Premium Styled Banner (matching homepage linear gradient aesthetic) */}
+        {/* Premium Styled Banner (matching homepage linear gradient aesthetic with themed background) */}
         <div
-          className="relative w-full rounded-2xl overflow-hidden mb-10 py-12 px-8 md:px-12 border border-amber-500/20"
+          className={`relative w-full rounded-2xl overflow-hidden mb-10 py-12 px-8 md:px-12 border ${theme.border}`}
           style={{
-            background: "linear-gradient(135deg, #181100 0%, #291e00 50%, #181100 100%)",
+            background: theme.gradient,
           }}
         >
           <div className="relative z-10 max-w-xl">
-            <span className="inline-block px-3 py-1 bg-amber-400/90 text-black text-[10px] font-bold uppercase tracking-widest rounded-full mb-4">
+            <span className={`inline-block px-3 py-1 text-[10px] font-bold uppercase tracking-widest rounded-full mb-4 ${theme.badgeBg}`}>
               Collection
             </span>
             <h1 className="text-3xl md:text-4xl font-extrabold text-white leading-tight tracking-tight">
               {collection.title}
             </h1>
-            <p className="mt-3 text-sm md:text-base text-gray-300 leading-relaxed">
-              Explore our curated {collection.title} collection, filled with products handpicked for quality and style.
+            <p className="mt-3 text-sm md:text-base text-gray-300 leading-relaxed font-medium">
+              {(collection as any).description || `Explore our curated ${collection.title} collection, filled with products handpicked for quality and style.`}
             </p>
           </div>
           {/* Decorative glow orbs */}
-          <div className="absolute top-0 right-0 w-72 h-72 rounded-full opacity-20 pointer-events-none" style={{ background: "radial-gradient(circle, #fbbf24, transparent)", transform: "translate(30%, -30%)" }} />
-          <div className="absolute bottom-0 right-1/4 w-48 h-48 rounded-full opacity-10 pointer-events-none" style={{ background: "radial-gradient(circle, #fbbf24, transparent)", transform: "translateY(40%)" }} />
+          <div className="absolute top-0 right-0 w-72 h-72 rounded-full opacity-20 pointer-events-none" style={{ background: theme.glow, transform: "translate(30%, -30%)" }} />
+          <div className="absolute bottom-0 right-1/4 w-48 h-48 rounded-full opacity-10 pointer-events-none" style={{ background: theme.glow, transform: "translateY(40%)" }} />
         </div>
 
-        {/* Products Grid */}
-        {products.length === 0 ? (
-          <div className="text-center py-20 bg-[var(--bg-card)] rounded-2xl border border-black/10 dark:border-white/10 text-[var(--text-muted)]">
-            No products found in this collection.
+        {/* Sidebar + Products Grid Layout */}
+        <div className="flex flex-col small:flex-row gap-8 small:gap-10 items-start">
+          <Suspense fallback={<div className="w-full small:w-[260px] h-96 bg-[var(--bg-card)] rounded-2xl animate-pulse" />}>
+            {/* @ts-ignore async server value */}
+            <ProductSidebar
+              countryCode={countryCode}
+              activeCollectionId={collection.id}
+            />
+          </Suspense>
+
+          <div className="w-full">
+            {products.length === 0 ? (
+              <div className="text-center py-20 bg-[var(--bg-card)] rounded-2xl border border-black/10 dark:border-white/10 text-[var(--text-muted)]">
+                No products found in this collection.
+              </div>
+            ) : (
+              <div className="space-y-6">
+                <div className="flex items-center justify-between border-b border-black/5 dark:border-white/5 pb-4">
+                  <h2 className="text-lg md:text-xl font-bold text-[var(--text-primary)]">
+                    Products in {collection.title}
+                  </h2>
+                  <span className="text-xs text-[var(--text-muted)]">
+                    Showing {products.length} products
+                  </span>
+                </div>
+                
+                <div className="grid grid-cols-2 small:grid-cols-3 gap-4">
+                  {products.map((product) => (
+                    <ProductCard
+                      key={product.id}
+                      product={product}
+                      region={region}
+                      accentColor="amber"
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
-        ) : (
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg md:text-xl font-bold text-[var(--text-primary)]">
-                Products in {collection.title}
-              </h2>
-              <span className="text-xs text-[var(--text-muted)]">
-                Showing {products.length} products
-              </span>
-            </div>
-            
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {products.map((product) => (
-                <ProductCard
-                  key={product.id}
-                  product={product}
-                  region={region}
-                  accentColor="amber"
-                />
-              ))}
-            </div>
-          </div>
-        )}
+        </div>
       </div>
     </div>
   )

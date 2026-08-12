@@ -1,9 +1,9 @@
 import { Suspense } from "react"
 
 import SkeletonProductGrid from "@modules/skeletons/templates/skeleton-product-grid"
-import RefinementList from "@modules/store/components/refinement-list"
+import ProductSidebar from "@modules/store/components/ProductSidebar"
+import SortDropdown from "@modules/store/components/SortDropdown"
 import { SortOptions } from "@modules/store/components/refinement-list/sort-products"
-import { getProductFacets } from "@lib/data/products"
 
 import PaginatedProducts from "./paginated-products"
 
@@ -22,25 +22,26 @@ const StoreTemplate = ({
 }) => {
   const pageNumber = page ? parseInt(page) : 1
   const sort = sortBy || "created_at"
-  const facetsPromise = getProductFacets({ countryCode })
 
   return (
     <div
-      className="flex flex-col small:flex-row small:items-start py-6 content-container"
+      className="flex flex-col small:flex-row gap-8 small:gap-10 items-start py-6 content-container"
       data-testid="category-container"
     >
-      <Suspense fallback={null}>
+      <Suspense fallback={<div className="w-full small:w-[260px] h-96 bg-[var(--bg-card)] rounded-2xl animate-pulse" />}>
         {/* @ts-ignore async server value */}
-        <StoreRefinements
-          sortBy={sort}
-          tag={tag}
-          category={category}
-          facetsPromise={facetsPromise}
+        <ProductSidebar
+          countryCode={countryCode}
+          activeCategoryHandle={category}
+          activeTagValue={tag}
         />
       </Suspense>
       <div className="w-full">
-        <div className="mb-8 text-2xl-semi">
-          <h1 data-testid="store-page-title">All products</h1>
+        <div className="mb-8 flex items-center justify-between border-b border-black/5 dark:border-white/5 pb-4">
+          <h1 className="text-2xl font-bold text-[var(--text-primary)]" data-testid="store-page-title">
+            All Products
+          </h1>
+          <SortDropdown sortBy={sort} />
         </div>
         <Suspense fallback={<SkeletonProductGrid />}>
           <PaginatedProducts
@@ -53,30 +54,6 @@ const StoreTemplate = ({
         </Suspense>
       </div>
     </div>
-  )
-}
-
-async function StoreRefinements({
-  sortBy,
-  tag,
-  category,
-  facetsPromise,
-}: {
-  sortBy: SortOptions
-  tag?: string
-  category?: string
-  facetsPromise: ReturnType<typeof getProductFacets>
-}) {
-  const facets = await facetsPromise
-
-  return (
-    <RefinementList
-      sortBy={sortBy}
-      activeTag={tag}
-      activeCategory={category}
-      tags={facets.tags}
-      categories={facets.categories}
-    />
   )
 }
 

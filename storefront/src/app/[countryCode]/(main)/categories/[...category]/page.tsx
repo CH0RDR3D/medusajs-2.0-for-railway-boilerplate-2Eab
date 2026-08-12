@@ -1,4 +1,4 @@
-import React from "react"
+import React, { Suspense } from "react"
 import { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { getCategoryByHandle } from "@lib/data/categories"
@@ -6,6 +6,7 @@ import { getProductsList } from "@lib/data/products"
 import { getRegion } from "@lib/data/regions"
 import { ProductCard } from "@modules/home/components/custom-home/Product-Grid"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
+import ProductSidebar from "@modules/store/components/ProductSidebar"
 
 type Props = {
   params: Promise<{ category: string[]; countryCode: string }>
@@ -105,34 +106,46 @@ export default async function CategoryPage(props: Props) {
           <div className="absolute bottom-0 right-1/4 w-48 h-48 rounded-full opacity-10 pointer-events-none" style={{ background: "radial-gradient(circle, #8b5cf6, transparent)", transform: "translateY(40%)" }} />
         </div>
 
-        {/* Products Grid */}
-        {products.length === 0 ? (
-          <div className="text-center py-20 bg-[var(--bg-card)] rounded-2xl border border-black/10 dark:border-white/10 text-[var(--text-muted)]">
-            No products found in this category.
+        {/* Sidebar + Products Grid Layout */}
+        <div className="flex flex-col small:flex-row gap-8 small:gap-10 items-start">
+          <Suspense fallback={<div className="w-full small:w-[260px] h-96 bg-[var(--bg-card)] rounded-2xl animate-pulse" />}>
+            {/* @ts-ignore async server value */}
+            <ProductSidebar
+              countryCode={countryCode}
+              activeCategoryId={category.id}
+            />
+          </Suspense>
+
+          <div className="w-full">
+            {products.length === 0 ? (
+              <div className="text-center py-20 bg-[var(--bg-card)] rounded-2xl border border-black/10 dark:border-white/10 text-[var(--text-muted)]">
+                No products found in this category.
+              </div>
+            ) : (
+              <div className="space-y-6">
+                <div className="flex items-center justify-between border-b border-black/5 dark:border-white/5 pb-4">
+                  <h2 className="text-lg md:text-xl font-bold text-[var(--text-primary)]">
+                    Products in {category.name}
+                  </h2>
+                  <span className="text-xs text-[var(--text-muted)]">
+                    Showing {products.length} products
+                  </span>
+                </div>
+                
+                <div className="grid grid-cols-2 small:grid-cols-3 gap-4">
+                  {products.map((product) => (
+                    <ProductCard
+                      key={product.id}
+                      product={product}
+                      region={region}
+                      accentColor="violet"
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
-        ) : (
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg md:text-xl font-bold text-[var(--text-primary)]">
-                Products in {category.name}
-              </h2>
-              <span className="text-xs text-[var(--text-muted)]">
-                Showing {products.length} products
-              </span>
-            </div>
-            
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {products.map((product) => (
-                <ProductCard
-                  key={product.id}
-                  product={product}
-                  region={region}
-                  accentColor="violet"
-                />
-              ))}
-            </div>
-          </div>
-        )}
+        </div>
       </div>
     </div>
   )

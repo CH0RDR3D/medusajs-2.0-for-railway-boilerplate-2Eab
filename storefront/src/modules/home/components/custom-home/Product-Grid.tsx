@@ -55,9 +55,8 @@ export function ProductCard({
   return (
     <Link
       href={`/products/${product.handle}`}
-      className={`group relative flex flex-col rounded-xl overflow-hidden border transition-all duration-300 cursor-pointer ${
-        hovered ? `ring-1 ${accent.ring} border-transparent bg-black/5 dark:bg-white/5` : "border-black/5 dark:border-white/5 bg-transparent"
-      }`}
+      className={`group relative flex flex-col rounded-xl overflow-hidden border transition-all duration-300 cursor-pointer ${hovered ? `ring-1 ${accent.ring} border-transparent bg-black/5 dark:bg-white/5` : "border-black/5 dark:border-white/5 bg-transparent"
+        }`}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
@@ -68,9 +67,8 @@ export function ProductCard({
             src={product.thumbnail}
             alt={product.title ?? "Product Image"}
             fill
-            className={`object-contain p-4 transition-transform duration-500 ${
-              hovered ? "scale-110" : "scale-100"
-            }`}
+            className={`object-contain p-4 transition-transform duration-500 ${hovered ? "scale-110" : "scale-100"
+              }`}
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
@@ -111,7 +109,7 @@ export function ProductCard({
               </span>
             )}
           </div>
-          <span className={`text-xs font-semibold transition ${accent.link}`}>Shop →</span>
+          <span className={`text-xs font-semibold transition ${accent.link}`}>Shop Now</span>
         </div>
       </div>
     </Link>

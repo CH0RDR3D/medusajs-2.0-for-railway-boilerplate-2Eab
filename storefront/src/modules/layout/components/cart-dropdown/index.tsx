@@ -76,9 +76,9 @@ const CartDropdown = ({
       onMouseLeave={close}
     >
       <Popover className="relative h-full">
-        <Popover.Button className="h-full">
+        <Popover.Button className="h-full focus:outline-none">
           <LocalizedClientLink
-            className="hover:text-ui-fg-base"
+            className="hover:text-ui-fg-base focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:outline-none rounded-md px-1.5 py-1"
             href="/cart"
             data-testid="nav-cart-link"
           >{`Cart (${totalItems})`}</LocalizedClientLink>

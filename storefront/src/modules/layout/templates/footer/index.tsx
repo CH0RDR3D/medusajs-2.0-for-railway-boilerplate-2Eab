@@ -123,7 +123,7 @@ export default async function Footer() {
                 <li>
                   <LocalizedClientLink
                     href="/customer-care"
-                    className="hover:text-ui-fg-base"
+                    className="hover:text-ui-fg-base focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:outline-none rounded-md px-1"
                   >
                     Customer Care
                   </LocalizedClientLink>

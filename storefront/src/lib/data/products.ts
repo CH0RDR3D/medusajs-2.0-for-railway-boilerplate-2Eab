@@ -248,6 +248,31 @@ export const listProductsWithSort = async ({
     )
   }
 
+  // ── ID-based filtering (category_id, collection_id, tag_id) ─────────────────
+  const categoryIdParam = (queryParams as any)?.category_id || (queryParams as any)?.categoryId
+  if (categoryIdParam) {
+    const categoryIds = Array.isArray(categoryIdParam) ? categoryIdParam : [categoryIdParam]
+    filtered = filtered.filter((product) =>
+      product.categories?.some((c) => categoryIds.includes(c.id))
+    )
+  }
+
+  const collectionIdParam = (queryParams as any)?.collection_id || (queryParams as any)?.collectionId
+  if (collectionIdParam) {
+    const collectionIds = Array.isArray(collectionIdParam) ? collectionIdParam : [collectionIdParam]
+    filtered = filtered.filter((product) =>
+      product.collection_id && collectionIds.includes(product.collection_id)
+    )
+  }
+
+  const tagIdParam = (queryParams as any)?.tag_id || (queryParams as any)?.tagId
+  if (tagIdParam) {
+    const tagIds = Array.isArray(tagIdParam) ? tagIdParam : [tagIdParam]
+    filtered = filtered.filter((product) =>
+      product.tags?.some((t) => tagIds.includes(t.id))
+    )
+  }
+
   // ── Price range filter ───────────────────────────────────────────────────────
   // min_price / max_price are expressed in the region's currency unit (e.g. ZMW).
   // The calculated_amount returned by Medusa is already in that unit when
