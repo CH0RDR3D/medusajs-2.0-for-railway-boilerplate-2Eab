@@ -21,8 +21,8 @@ export default function RelatedProductsCarousel({
   const [canScroll, setCanScroll] = useState(false)
   const [hovered, setHovered] = useState<string | null>(null)
 
-  // Duplicate items for seamless loop
-  const items = [...products, ...products]
+  // Only duplicate items for seamless loop if content exceeds container width
+  const items = canScroll ? [...products, ...products] : products
 
   const SPEED = 0.5 // px per frame
 
@@ -65,7 +65,7 @@ export default function RelatedProductsCarousel({
     el.scrollBy({ left: dir === "left" ? -280 : 280, behavior: "smooth" })
   }
 
-  // Touch swipe
+  // Touch swipe manual control
   const touchStartX = useRef(0)
   const onTouchStart = (e: React.TouchEvent) => {
     touchStartX.current = e.touches[0].clientX
@@ -79,19 +79,21 @@ export default function RelatedProductsCarousel({
 
   return (
     <div className="relative group/carousel">
-      {/* Arrow left */}
-      <button
-        onClick={() => scroll("left")}
-        className="absolute left-0 top-1/2 -translate-y-1/2 z-10 -translate-x-2 w-8 h-8 rounded-full
-          bg-[var(--bg-card)] border border-black/10 dark:border-white/10 shadow-md
-          flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--text-primary)]
-          opacity-0 group-hover/carousel:opacity-100 transition-opacity duration-200"
-        aria-label="Scroll left"
-      >
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-        </svg>
-      </button>
+      {/* Arrow left (show only if scrolling is possible) */}
+      {canScroll && (
+        <button
+          onClick={() => scroll("left")}
+          className="absolute left-0 top-1/2 -translate-y-1/2 z-10 -translate-x-4 w-8 h-8 rounded-full
+            bg-[var(--bg-card)] border border-black/10 dark:border-white/10 shadow-md
+            flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--text-primary)]
+            opacity-0 group-hover/carousel:opacity-100 transition-opacity duration-200 cursor-pointer"
+          aria-label="Scroll left"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+        </button>
+      )}
 
       {/* Scrollable track */}
       <div
@@ -116,6 +118,7 @@ export default function RelatedProductsCarousel({
             <Link
               key={key}
               href={`/products/${product.handle}`}
+              scroll={true}
               className="flex-shrink-0 w-44 group flex flex-col rounded-xl overflow-hidden border
                 border-black/8 dark:border-white/8 hover:border-amber-400/40
                 hover:ring-1 hover:ring-amber-400/30 transition-all duration-300"
@@ -174,19 +177,21 @@ export default function RelatedProductsCarousel({
         })}
       </div>
 
-      {/* Arrow right */}
-      <button
-        onClick={() => scroll("right")}
-        className="absolute right-0 top-1/2 -translate-y-1/2 z-10 translate-x-2 w-8 h-8 rounded-full
-          bg-[var(--bg-card)] border border-black/10 dark:border-white/10 shadow-md
-          flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--text-primary)]
-          opacity-0 group-hover/carousel:opacity-100 transition-opacity duration-200"
-        aria-label="Scroll right"
-      >
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-        </svg>
-      </button>
+      {/* Arrow right (show only if scrolling is possible) */}
+      {canScroll && (
+        <button
+          onClick={() => scroll("right")}
+          className="absolute right-0 top-1/2 -translate-y-1/2 z-10 translate-x-4 w-8 h-8 rounded-full
+            bg-[var(--bg-card)] border border-black/10 dark:border-white/10 shadow-md
+            flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--text-primary)]
+            opacity-0 group-hover/carousel:opacity-100 transition-opacity duration-200 cursor-pointer"
+          aria-label="Scroll right"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </button>
+      )}
     </div>
   )
 }

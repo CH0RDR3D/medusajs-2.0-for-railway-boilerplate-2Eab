@@ -13,12 +13,14 @@ const StoreTemplate = ({
   tag,
   category,
   countryCode,
+  seed,
 }: {
   sortBy?: SortOptions
   page?: string
   tag?: string
   category?: string
   countryCode: string
+  seed?: string
 }) => {
   const pageNumber = page ? parseInt(page) : 1
   const sort = sortBy || "created_at"
@@ -50,6 +52,7 @@ const StoreTemplate = ({
             tag={tag}
             category={category}
             countryCode={countryCode}
+            seed={seed}
           />
         </Suspense>
       </div>
