@@ -75,8 +75,18 @@ const ShippingAddress = ({
       setFormAddress(cart?.shipping_address, cart?.email)
     }
 
-    if (cart && !cart.email && customer?.email) {
-      setFormAddress(undefined, customer.email)
+    // Auto-populate customer profile details (name, email, phone) if not already populated
+    if (customer) {
+      setFormData((prevState) => ({
+        ...prevState,
+        "shipping_address.first_name":
+          prevState["shipping_address.first_name"] || customer.first_name || "",
+        "shipping_address.last_name":
+          prevState["shipping_address.last_name"] || customer.last_name || "",
+        "shipping_address.phone":
+          prevState["shipping_address.phone"] || customer.phone || "",
+        email: prevState.email || cart?.email || customer.email || "",
+      }))
     }
 
     if (!cart?.shipping_address) {
@@ -86,7 +96,7 @@ const ShippingAddress = ({
           prevState["shipping_address.country_code"] || defaultCountry,
       }))
     }
-  }, [cart, customer?.email, setFormAddress])
+  }, [cart, customer, setFormAddress])
 
   const handleChange = (
     e: React.ChangeEvent<

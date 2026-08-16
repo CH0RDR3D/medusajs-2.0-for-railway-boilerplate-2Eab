@@ -1,145 +1,163 @@
 import { getCategoriesList } from "@lib/data/categories"
 import { getCollectionsList } from "@lib/data/collections"
 import { Text, clx } from "@medusajs/ui"
-
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import MedusaCTA from "@modules/layout/components/medusa-cta"
 import Logo from "@modules/layout/components/logo"
+import { MapPin, Phone, Mail, Clock } from "lucide-react"
 
+/**
+ * Redesigned, compact footer for SYA Store.
+ * Organized into uncluttered columns for Brand, Essential Links, Categories, and Contact.
+ */
 export default async function Footer() {
-  const { collections } = await getCollectionsList(0, 6)
-  const { product_categories } = await getCategoriesList(0, 6)
+  const { collections } = await getCollectionsList(0, 4)
+  const { product_categories } = await getCategoriesList(0, 4)
 
   return (
-    <footer className="border-t border-ui-border-base w-full">
-      <div className="content-container flex flex-col w-full">
-        <div className="flex flex-col gap-y-6 xsmall:flex-row items-start justify-between py-40">
-          <div>
+    <footer className="border-t border-[var(--surface-border)] bg-[var(--bg-card)] w-full text-[var(--text-primary)] transition-colors duration-200">
+      <div className="content-container max-w-6xl mx-auto px-4 sm:px-6">
+        {/* Main Footer Columns */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-8 py-12">
+          
+          {/* Brand & Address Column */}
+          <div className="lg:col-span-4 space-y-4">
             <LocalizedClientLink
               href="/"
-              className="flex transition-opacity hover:opacity-85"
+              className="inline-block transition-opacity hover:opacity-85 focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:outline-none rounded-md"
             >
               <Logo />
             </LocalizedClientLink>
-          </div>
-          <div className="text-small-regular gap-10 md:gap-x-16 grid grid-cols-2 sm:grid-cols-3">
-            {product_categories && product_categories?.length > 0 && (
-              <div className="flex flex-col gap-y-2">
-                <span className="txt-small-plus txt-ui-fg-base">
-                  Categories
-                </span>
-                <ul
-                  className="grid grid-cols-1 gap-2"
-                  data-testid="footer-categories"
-                >
-                  {product_categories?.slice(0, 6).map((c) => {
-                    if (c.parent_category) {
-                      return
-                    }
-
-                    const children =
-                      c.category_children?.map((child) => ({
-                        name: child.name,
-                        handle: child.handle,
-                        id: child.id,
-                      })) || null
-
-                    return (
-                      <li
-                        className="flex flex-col gap-2 text-ui-fg-subtle txt-small"
-                        key={c.id}
-                      >
-                        <LocalizedClientLink
-                          className={clx(
-                            "hover:text-ui-fg-base",
-                            children && "txt-small-plus"
-                          )}
-                          href={`/categories/${c.handle}`}
-                          data-testid="category-link"
-                        >
-                          {c.name}
-                        </LocalizedClientLink>
-                        {children && (
-                          <ul className="grid grid-cols-1 ml-3 gap-2">
-                            {children &&
-                              children.map((child) => (
-                                <li key={child.id}>
-                                  <LocalizedClientLink
-                                    className="hover:text-ui-fg-base"
-                                    href={`/categories/${child.handle}`}
-                                    data-testid="category-link"
-                                  >
-                                    {child.name}
-                                  </LocalizedClientLink>
-                                </li>
-                              ))}
-                          </ul>
-                        )}
-                      </li>
-                    )
-                  })}
-                </ul>
-              </div>
-            )}
-            {collections && collections.length > 0 && (
-              <div className="flex flex-col gap-y-2">
-                <span className="txt-small-plus txt-ui-fg-base">
-                  Collections
-                </span>
-                <ul
-                  className={clx(
-                    "grid grid-cols-1 gap-2 text-ui-fg-subtle txt-small",
-                    {
-                      "grid-cols-2": (collections?.length || 0) > 3,
-                    }
-                  )}
-                >
-                  {collections?.slice(0, 6).map((c) => (
-                    <li key={c.id}>
-                      <LocalizedClientLink
-                        className="hover:text-ui-fg-base"
-                        href={`/collections/${c.handle}`}
-                      >
-                        {c.title}
-                      </LocalizedClientLink>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-            <div className="flex flex-col gap-y-2">
-              <span className="txt-small-plus txt-ui-fg-base">SYA</span>
-              <ul className="grid grid-cols-1 gap-y-2 text-ui-fg-subtle txt-small">
-                <li>
-                  <a
-                    href="@src/assets/medusa-logo.svg"
-                    target="_blank"
-                    rel="noreferrer"
-                    className="hover:text-ui-fg-base"
-                  >
-                    About SYA
-                  </a>
-                </li>
-                <li>
-                  <LocalizedClientLink
-                    href="/customer-care"
-                    className="hover:text-ui-fg-base focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:outline-none rounded-md px-1"
-                  >
-                    Customer Care
-                  </LocalizedClientLink>
-                </li>
-                <li>
-                  <span className="hover:text-ui-fg-base">Source code</span>
-                </li>
-              </ul>
+            <p className="text-xs leading-relaxed text-[var(--text-secondary)] max-w-sm">
+              Zambia&apos;s multi-sector destination for dependable vehicles, certified automotive care, renewable solar energy, and household essentials.
+            </p>
+            <div className="flex items-start gap-2 text-xs text-[var(--text-secondary)] pt-1">
+              <MapPin className="h-4 w-4 shrink-0 text-amber-500 mt-0.5" />
+              <span>Plot No. F/687/A/1/A/8, Makeni Road, Lusaka, Zambia</span>
             </div>
           </div>
+
+          {/* Quick Links Column */}
+          <div className="lg:col-span-2 space-y-3">
+            <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-primary)]">
+              Quick Links
+            </span>
+            <ul className="space-y-2 text-xs text-[var(--text-secondary)]">
+              <li>
+                <LocalizedClientLink
+                  href="/about"
+                  className="hover:text-amber-500 transition duration-150"
+                >
+                  About SYA
+                </LocalizedClientLink>
+              </li>
+              <li>
+                <LocalizedClientLink
+                  href="/customer-care"
+                  className="hover:text-amber-500 transition duration-150"
+                >
+                  Customer Care &amp; FAQs
+                </LocalizedClientLink>
+              </li>
+              <li>
+                <LocalizedClientLink
+                  href="/store"
+                  className="hover:text-amber-500 transition duration-150"
+                >
+                  Store Catalog
+                </LocalizedClientLink>
+              </li>
+              <li>
+                <LocalizedClientLink
+                  href="/account"
+                  className="hover:text-amber-500 transition duration-150"
+                >
+                  Account &amp; Orders
+                </LocalizedClientLink>
+              </li>
+            </ul>
+          </div>
+
+          {/* Categories & Collections Column */}
+          <div className="lg:col-span-3 space-y-3">
+            <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-primary)]">
+              Featured Categories
+            </span>
+            <ul className="space-y-2 text-xs text-[var(--text-secondary)]">
+              {product_categories && product_categories.length > 0 ? (
+                product_categories.slice(0, 4).map((c) => (
+                  <li key={c.id}>
+                    <LocalizedClientLink
+                      href={`/categories/${c.handle}`}
+                      className="hover:text-amber-500 transition duration-150"
+                    >
+                      {c.name}
+                    </LocalizedClientLink>
+                  </li>
+                ))
+              ) : (
+                <>
+                  <li>
+                    <LocalizedClientLink href="/store" className="hover:text-amber-500">
+                      Vehicles &amp; Auto Care
+                    </LocalizedClientLink>
+                  </li>
+                  <li>
+                    <LocalizedClientLink href="/store" className="hover:text-amber-500">
+                      Solar Power Systems
+                    </LocalizedClientLink>
+                  </li>
+                  <li>
+                    <LocalizedClientLink href="/store" className="hover:text-amber-500">
+                      Household Goods
+                    </LocalizedClientLink>
+                  </li>
+                </>
+              )}
+            </ul>
+          </div>
+
+          {/* Contact Column */}
+          <div className="lg:col-span-3 space-y-3">
+            <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-primary)]">
+              Customer Support
+            </span>
+            <div className="space-y-2 text-xs text-[var(--text-secondary)]">
+              <div className="flex items-center gap-2">
+                <Phone className="h-3.5 w-3.5 text-amber-500 shrink-0" />
+                <a href="tel:+260978883420" className="hover:text-amber-500 transition">
+                  +260-978-883-420
+                </a>
+              </div>
+              <div className="flex items-center gap-2">
+                <Mail className="h-3.5 w-3.5 text-amber-500 shrink-0" />
+                <a href="mailto:info@syastore.com" className="hover:text-amber-500 transition">
+                  info@syastore.com
+                </a>
+              </div>
+              <div className="flex items-center gap-2 text-[11px] text-[var(--text-muted)] pt-1">
+                <Clock className="h-3.5 w-3.5 text-amber-500 shrink-0" />
+                <span>Mon - Sat: 08:00 - 18:00 CAT</span>
+              </div>
+            </div>
+          </div>
+
         </div>
-        <div className="flex w-full mb-16 justify-between text-ui-fg-muted">
+
+        {/* Bottom Bar */}
+        <div className="flex flex-col sm:flex-row items-center justify-between border-t border-[var(--surface-border)] py-6 text-xs text-[var(--text-muted)] gap-3">
           <Text className="txt-compact-small">
-            © {new Date().getFullYear()} SYA Store. All rights reserved.
+            © {new Date().getFullYear()} SYA Store Lusaka. All rights reserved.
           </Text>
-          <MedusaCTA />
+          <div className="flex items-center gap-6">
+            <LocalizedClientLink href="/about" className="hover:text-[var(--text-primary)] transition">
+              About
+            </LocalizedClientLink>
+            <LocalizedClientLink href="/customer-care" className="hover:text-[var(--text-primary)] transition">
+              Customer Care
+            </LocalizedClientLink>
+            <MedusaCTA />
+          </div>
         </div>
       </div>
     </footer>

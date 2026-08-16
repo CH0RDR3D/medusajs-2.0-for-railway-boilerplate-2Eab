@@ -1,14 +1,18 @@
 import { Metadata } from "next"
-import CustomerServiceView from "@modules/customer-service/components/customer-service-view"
+import CustomerCareView from "@modules/customer-care/components/CustomerCareView"
 import { getCustomerServiceData } from "@lib/data/customer-service"
 
 export const metadata: Metadata = {
-  title: "Customer Service | Contact Info, FAQs, Returns & Delivery",
-  description: "Customer service hub for NewStore. Find contact info, FAQs, return policies, and delivery information.",
+  title: "Customer Care & Support | SYA Store",
+  description: "Customer Care support hub for SYA Store. Find contact info, FAQs, return policies, and delivery information.",
 }
 
+/**
+ * Legacy customer-service route preserved for backwards compatibility,
+ * rendering the unified Customer Care support view.
+ */
 export default async function CustomerServicePage() {
   const data = await getCustomerServiceData()
 
-  return <CustomerServiceView data={data} />
+  return <CustomerCareView data={data} />
 }

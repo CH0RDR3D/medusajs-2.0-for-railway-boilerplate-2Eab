@@ -55,26 +55,31 @@ This document tracks the steps, thoughts, and technical details of the refactori
   * Configured Lenco as the sole payment method.
   * Updated `PaymentButton` to render the interactive `LencoButton` component (which manages script load, inline popup, and verification) conditionally after name, phone, optional email, and maps location coordinates are fully populated.
 
----
+### 8. Customer Care, About Page, Account Integration, Footer & UI Accessibility
+* **Goal**: Implement Amazon-inspired Customer Care hub, Amazon-inspired "Who We Are" About page, unified Account & Checkout name integration with Google sign-in auto-prompting, redesigned compact footer, and accessible theme controls.
+* **Implementation**:
+  * **Customer Care Hub (`/customer-care`)**:
+    * Created Amazon-inspired issue category cards (*Orders & Tracking*, *Returns & Refunds*, *Payments & Lenco*, *Delivery & Makeni Pickup*, *Auto Garage & Vehicles*, *Solar Power Systems*).
+    * Implemented interactive live search filtering across categorized FAQs and accordion expansion.
+    * Added direct contact channels for Phone (+260-978-883-420 / +260-966-666-608), Email (info@syastore.com), and Makeni Road physical showroom.
+    * Built interactive contact form with topic dropdown, optional order ID, validation, and feedback state.
+    * Updated legacy `/customer-service` route to render `CustomerCareView` for seamless backwards compatibility.
+  * **About Page (`/about`)**:
+    * Implemented Amazon "Who We Are"-inspired company profile with a bold hero banner and mission statement.
+    * Detailed SYA Store's 5 core service pillars: Vehicle Showroom, Auto Garage & Diagnostics, Renewable Solar Energy, Household & Hardware, and Express Logistics.
+    * Outlined guiding values (Customer Obsession, Uncompromising Ethics, Practical Innovation, Quality Guarantee) and trust metrics.
+    * Added comprehensive Lusaka showroom & service center visit card with full address and direct hotlines.
+  * **Account & Checkout Integration**:
+    * Display full customer / Google account name prominently across Account Overview, Mobile Account Nav, and Checkout Page.
+    * Built `CheckoutAccountBadge` component displaying signed-in status (`Signed in as [Name] ([email])`), active Google account detection, and 1-click login prompt for guests.
+    * Enhanced `ShippingAddress` to automatically pre-populate `first_name`, `last_name`, `phone`, and `email` from active customer/Google profile.
+    * Enhanced `GoogleAutoSignIn` to detect browser Google sessions and auto-prompt linking with one-click connection.
+  * **Footer Redesign**:
+    * Redesigned footer to be sleek, uncluttered, and compact (reducing excessive padding).
+    * Organized 4 clear columns: Brand & Address, Quick Links (`/about`, `/customer-care`, `/store`, `/account`), Featured Categories, and Customer Support.
+    * Fixed broken SVG href link, replacing it with proper Next.js localized link to `/about`.
+  * **UI & Accessibility Fixes**:
+    * Enhanced `ThemeToggle` with `aria-label`, `aria-pressed`, `role="button"`, and high-contrast visible focus rings.
+    * Cleaned up unused imports in `Nav` and added proper accessible labels.
+    * Verified 100% type-safe compilation with `tsc --noEmit`.
 
-## Troubleshooting the "Error setting up the request" Cart Error
-
-### Diagnosis
-1. Triggering the `addToCart` request threw a 500 Internal Server Error from the Medusa backend.
-2. In `medusa-error.ts`, the catch handler expects Axios-like error objects (`error.response`/`error.request`). Since the new Medusa JS SDK uses `fetch`, these properties were undefined, causing the error message to fall back to the generic string:
-   `Error setting up the request: An unknown error occurred.`
-3. Started the Medusa backend in dev mode using `pnpm dev` to capture console logs.
-4. The backend output showed the exact server crash:
-   `TypeError: Cannot read properties of undefined (reading 'calculated_amount') at get-variants-and-items-with-prices.ts`
-5. Verified the database schema and contents: the active region is configured for `zmk` (Zambian Kwacha) currency, but product variants only had prices defined for `usd` and `eur`.
-6. When calculating the line-item prices for the cart in ZMK, Medusa's core pricing engine found no matching currency records in the database, resulting in an undefined price reference and crashing the workflow.
-
-### Resolution
-1. Created `backend/insert-prices.js` to query all variant prices in `usd` and copy them to both `zmk` and `zmw` currencies, converting the currency amounts using a conversion multiplier of 25 (e.g. 15 USD = 375 ZMK).
-2. Ran the database script against the host's native PostgreSQL server:
-   ```bash
-   node insert-prices.js
-   ```
-   *Successfully processed prices. Inserted 44 new ZMK/ZMW price rows.*
-3. Re-ran the diagnostic cart test script: the backend responded with `200 OK` and successfully created/returned the cart and line items.
-4. Cleaned up all diagnostic files (`test-add-to-cart.ts` / `test-db.js` / `check-prices.js` / `show-columns.js`).

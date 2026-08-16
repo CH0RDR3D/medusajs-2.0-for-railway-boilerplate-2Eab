@@ -24,24 +24,29 @@ const AccountNav = ({
     await signout(countryCode)
   }
 
+  const accountName =
+    [customer?.first_name, customer?.last_name].filter(Boolean).join(" ") ||
+    customer?.email ||
+    "Customer"
+
   return (
     <div>
       <div className="small:hidden" data-testid="mobile-account-nav">
         {route !== `/${countryCode}/account` ? (
           <LocalizedClientLink
             href="/account"
-            className="flex items-center gap-x-2 text-small-regular py-2"
+            className="flex items-center gap-x-2 text-small-regular py-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
             data-testid="account-main-link"
           >
             <>
               <ChevronDown className="transform rotate-90" />
-              <span>Account</span>
+              <span>Account Overview</span>
             </>
           </LocalizedClientLink>
         ) : (
           <>
-            <div className="text-xl-semi mb-4 px-8">
-              Hello {customer?.first_name}
+            <div className="text-lg font-bold mb-4 px-4 text-[var(--text-primary)]">
+              Hello, {accountName}
             </div>
             <div className="text-base-regular">
               <ul>
