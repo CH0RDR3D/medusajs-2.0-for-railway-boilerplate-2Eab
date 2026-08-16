@@ -1,7 +1,7 @@
+import Product from "../product-preview"
 import { getRegion } from "@lib/data/regions"
 import { getProductsList } from "@lib/data/products"
 import { HttpTypes } from "@medusajs/types"
-import RelatedProductsCarousel from "./RelatedProductsCarousel"
 
 type RelatedProductsProps = {
   product: HttpTypes.StoreProduct
@@ -24,7 +24,7 @@ export default async function RelatedProducts({
     return null
   }
 
-  // Define related products logic
+  // edit this function to define your related products logic
   const queryParams: StoreProductParamsWithTags = {}
   if (region?.id) {
     queryParams.region_id = region.id
@@ -55,16 +55,22 @@ export default async function RelatedProducts({
 
   return (
     <div className="product-page-constraint">
-      <div className="flex flex-col items-center text-center mb-10">
-        <span className="text-sm font-bold uppercase tracking-widest text-amber-500 mb-2">
+      <div className="flex flex-col items-center text-center mb-16">
+        <span className="text-base-regular text-gray-600 mb-6">
           Related products
         </span>
-        <p className="text-xl md:text-2xl font-extrabold text-[var(--text-primary)] max-w-lg">
+        <p className="text-2xl-regular text-ui-fg-base max-w-lg">
           You might also want to check out these products.
         </p>
       </div>
 
-      <RelatedProductsCarousel products={products} region={region} />
+      <ul className="grid grid-cols-2 small:grid-cols-3 medium:grid-cols-4 gap-x-6 gap-y-8">
+        {products.map((product) => (
+          <li key={product.id}>
+            {region && <Product region={region} product={product} />}
+          </li>
+        ))}
+      </ul>
     </div>
   )
 }

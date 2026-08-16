@@ -69,31 +69,6 @@ const fetchStoreProducts = async <T,>(
   return (await response.json()) as T
 }
 
-const fetchStoreProductsRandom = async <T,>(
-  query: Record<string, unknown>,
-  revalidate = 300
-) => {
-  const url = new URL(`${getMedusaBackendUrl()}/store/products-random`)
-  appendSearchParams(url.searchParams, query)
-
-  const response = await fetch(url.toString(), {
-    method: "GET",
-    headers: getPublishableApiKey()
-      ? {
-          "x-publishable-api-key": getPublishableApiKey(),
-        }
-      : undefined,
-    next: { revalidate, tags: ["products"] },
-    cache: "force-cache",
-  })
-
-  if (!response.ok) {
-    throw new Error(`Failed to fetch random products: ${response.status}`)
-  }
-
-  return (await response.json()) as T
-}
-
 /**
  * Fetch a paginated list of products from Medusa.
  *
@@ -200,7 +175,6 @@ export const listProductsWithSort = async ({
   q,
   tag,
   category,
-  seed,
 }: {
   page?: number
   queryParams?: ProductListQueryParams
@@ -210,7 +184,6 @@ export const listProductsWithSort = async ({
   q?: string
   tag?: string
   category?: string
-  seed?: string
 }): Promise<{
   response: { products: HttpTypes.StoreProduct[]; count: number }
   nextPage: number | null
@@ -224,49 +197,17 @@ export const listProductsWithSort = async ({
   // Resolve the region so we can match prices by region_id / currency_code
   const region = await getRegion(countryCode)
 
-  let products: HttpTypes.StoreProduct[] = []
-  let count = 0
-
-  if (seed) {
-    const randomQueryParams: Record<string, any> = {
+  const {
+    response: { products },
+  } = await listProducts({
+    pageParam: 1,
+    queryParams: {
+      ...queryParams,
+      ...(optionFilters.length ? { option_value_id: optionFilters } : {}),
       limit: 100,
-      offset: 0,
-      seed,
-      region_id: region?.id,
-    }
-    const collectionIdParam = (queryParams as any)?.collection_id || (queryParams as any)?.collectionId
-    if (collectionIdParam) {
-      randomQueryParams.collection_id = Array.isArray(collectionIdParam) ? collectionIdParam : [collectionIdParam]
-    }
-    const categoryIdParam = (queryParams as any)?.category_id || (queryParams as any)?.categoryId
-    if (categoryIdParam) {
-      randomQueryParams.category_id = Array.isArray(categoryIdParam) ? categoryIdParam : [categoryIdParam]
-    }
-
-    try {
-      const resJson = await fetchStoreProductsRandom<{
-        products: HttpTypes.StoreProduct[]
-        count: number
-      }>(randomQueryParams)
-      products = resJson.products || []
-      count = resJson.count || 0
-    } catch {
-      products = []
-      count = 0
-    }
-  } else {
-    const res = await listProducts({
-      pageParam: 1,
-      queryParams: {
-        ...queryParams,
-        ...(optionFilters.length ? { option_value_id: optionFilters } : {}),
-        limit: 100,
-      },
-      countryCode,
-    })
-    products = res.response.products
-    count = res.response.count
-  }
+    },
+    countryCode,
+  })
 
   let filtered = products
 
@@ -370,8 +311,7 @@ export const listProductsWithSort = async ({
   }
 
   // ── Sort & paginate ──────────────────────────────────────────────────────────
-  const shouldKeepRandom = seed && sortBy !== "price_asc" && sortBy !== "price_desc"
-  const sortedProducts = shouldKeepRandom ? filtered : sortProducts(filtered, sortBy)
+  const sortedProducts = sortProducts(filtered, sortBy)
 
   const safePage = Math.max(page, 1)
   const offset = (safePage - 1) * limit

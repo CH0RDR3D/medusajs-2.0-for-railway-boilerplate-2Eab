@@ -2,20 +2,17 @@ import React, { Suspense } from "react"
 import { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { getCategoryByHandle } from "@lib/data/categories"
-import { getProductsListWithSort } from "@lib/data/products"
+import { getProductsList } from "@lib/data/products"
 import { getRegion } from "@lib/data/regions"
 import { ProductCard } from "@modules/home/components/custom-home/Product-Grid"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import ProductSidebar from "@modules/store/components/ProductSidebar"
-import { Pagination } from "@modules/store/components/pagination"
-import { SortOptions } from "@modules/store/components/refinement-list/sort-products"
 
 type Props = {
   params: Promise<{ category: string[]; countryCode: string }>
   searchParams: Promise<{
     page?: string
     sortBy?: string
-    seed?: string
   }>
 }
 
@@ -37,10 +34,6 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
 
 export default async function CategoryPage(props: Props) {
   const params = await props.params
-  const searchParams = await props.searchParams
-  const page = searchParams.page ? parseInt(searchParams.page) : 1
-  const seed = searchParams.seed
-  const sortBy = (searchParams.sortBy as SortOptions) || "created_at"
 
   const countryCode = params.countryCode
   const { product_categories } = await getCategoryByHandle(params.category)
@@ -57,19 +50,14 @@ export default async function CategoryPage(props: Props) {
     notFound()
   }
 
-  // Fetch paginated products by category_id (limit 12)
-  const { response: { products, count } } = await getProductsListWithSort({
-    page,
+  // Fetch products by category_id (limit 12) as requested
+  const { response: { products } } = await getProductsList({
+    countryCode,
     queryParams: {
       limit: 12,
       category_id: [category.id],
     },
-    sortBy,
-    countryCode,
-    seed,
   })
-
-  const totalPages = Math.ceil(count / 12)
 
   return (
     <div className="min-h-screen py-10" style={{ background: "var(--bg-base)" }}>
@@ -154,13 +142,6 @@ export default async function CategoryPage(props: Props) {
                     />
                   ))}
                 </div>
-                {totalPages > 1 && (
-                  <Pagination
-                    page={page}
-                    totalPages={totalPages}
-                    data-testid="product-pagination"
-                  />
-                )}
               </div>
             )}
           </div>

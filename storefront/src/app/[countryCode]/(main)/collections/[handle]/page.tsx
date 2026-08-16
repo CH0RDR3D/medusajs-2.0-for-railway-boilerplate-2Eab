@@ -2,20 +2,17 @@ import React, { Suspense } from "react"
 import { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { getCollectionByHandle } from "@lib/data/collections"
-import { getProductsListWithSort } from "@lib/data/products"
+import { getProductsList } from "@lib/data/products"
 import { getRegion } from "@lib/data/regions"
 import { ProductCard } from "@modules/home/components/custom-home/Product-Grid"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import ProductSidebar from "@modules/store/components/ProductSidebar"
-import { Pagination } from "@modules/store/components/pagination"
-import { SortOptions } from "@modules/store/components/refinement-list/sort-products"
 
 type Props = {
   params: Promise<{ handle: string; countryCode: string }>
   searchParams: Promise<{
     page?: string
     sortBy?: string
-    seed?: string
   }>
 }
 
@@ -35,10 +32,6 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
 
 export default async function CollectionPage(props: Props) {
   const params = await props.params
-  const searchParams = await props.searchParams
-  const page = searchParams.page ? parseInt(searchParams.page) : 1
-  const seed = searchParams.seed
-  const sortBy = (searchParams.sortBy as SortOptions) || "created_at"
   const { handle, countryCode } = params
 
   const collection = await getCollectionByHandle(handle)
@@ -51,19 +44,14 @@ export default async function CollectionPage(props: Props) {
     notFound()
   }
 
-  // Fetch paginated products in this collection
-  const { response: { products, count } } = await getProductsListWithSort({
-    page,
+  // Fetch up to 12 products in this collection
+  const { response: { products } } = await getProductsList({
+    countryCode,
     queryParams: {
       limit: 12,
       collection_id: [collection.id],
     },
-    sortBy,
-    countryCode,
-    seed,
   })
-
-  const totalPages = Math.ceil(count / 12)
 
   // Dynamic themed styles mapper for collection pages
   const getCollectionTheme = (handleName: string) => {
@@ -186,13 +174,6 @@ export default async function CollectionPage(props: Props) {
                     />
                   ))}
                 </div>
-                {totalPages > 1 && (
-                  <Pagination
-                    page={page}
-                    totalPages={totalPages}
-                    data-testid="product-pagination"
-                  />
-                )}
               </div>
             )}
           </div>

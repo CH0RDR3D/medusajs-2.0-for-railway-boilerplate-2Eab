@@ -35,13 +35,9 @@ export function Pagination({
   ) => (
     <button
       key={p}
-      className={clx(
-        "w-8 h-8 flex items-center justify-center text-xs font-semibold rounded-full transition duration-150 cursor-pointer disabled:cursor-default",
-        {
-          "bg-amber-500 text-white shadow-sm font-bold": isCurrent,
-          "text-[var(--text-secondary)] hover:bg-black/5 dark:hover:bg-white/5 hover:text-[var(--text-primary)]": !isCurrent,
-        }
-      )}
+      className={clx("txt-xlarge-plus text-ui-fg-muted", {
+        "text-ui-fg-base hover:text-ui-fg-subtle": isCurrent,
+      })}
       disabled={isCurrent}
       onClick={() => handlePageChange(p)}
     >
@@ -53,7 +49,7 @@ export function Pagination({
   const renderEllipsis = (key: string) => (
     <span
       key={key}
-      className="w-8 h-8 flex items-center justify-center text-xs text-[var(--text-muted)] font-medium cursor-default"
+      className="txt-xlarge-plus text-ui-fg-muted items-center cursor-default"
     >
       ...
     </span>
@@ -111,52 +107,8 @@ export function Pagination({
 
   // Render the component
   return (
-    <div className="flex flex-col items-center gap-4 w-full mt-12 select-none">
-      {/* Indicator */}
-      <span className="text-xs font-semibold text-[var(--text-muted)]">
-        Page {page} of {totalPages}
-      </span>
-
-      <div className="flex gap-2 items-center" data-testid={dataTestid}>
-        {/* Previous Page Button */}
-        <button
-          onClick={() => handlePageChange(page - 1)}
-          disabled={page <= 1}
-          className="
-            flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl border border-black/10 dark:border-white/10
-            text-[var(--text-secondary)] bg-[var(--bg-card)] hover:bg-black/5 dark:hover:bg-white/5 disabled:opacity-40
-            disabled:hover:bg-transparent transition duration-150 cursor-pointer disabled:cursor-default
-          "
-          aria-label="Go to previous page"
-        >
-          <svg className="w-3.5 h-3.5 animate-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
-          Prev
-        </button>
-
-        {/* Page Buttons (numbers) */}
-        <div className="flex gap-2 items-center mx-1">
-          {renderPageButtons()}
-        </div>
-
-        {/* Next Page Button */}
-        <button
-          onClick={() => handlePageChange(page + 1)}
-          disabled={page >= totalPages}
-          className="
-            flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl border border-black/10 dark:border-white/10
-            text-[var(--text-secondary)] bg-[var(--bg-card)] hover:bg-black/5 dark:hover:bg-white/5 disabled:opacity-40
-            disabled:hover:bg-transparent transition duration-150 cursor-pointer disabled:cursor-default
-          "
-          aria-label="Go to next page"
-        >
-          Next
-          <svg className="w-3.5 h-3.5 animate-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-          </svg>
-        </button>
-      </div>
+    <div className="flex justify-center w-full mt-12">
+      <div className="flex gap-3 items-end" data-testid={dataTestid}>{renderPageButtons()}</div>
     </div>
   )
 }
