@@ -7,6 +7,6 @@ type Props = {
 }
 
 export default async function TodaysDealsPage(props: Props) {
-  const params = await props.params
-  redirect(`/${params.countryCode}/deals`)
+  const { countryCode } = await props.params
+  redirect(`/${countryCode}/deals`)
 }

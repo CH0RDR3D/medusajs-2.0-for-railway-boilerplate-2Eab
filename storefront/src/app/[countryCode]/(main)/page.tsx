@@ -29,11 +29,10 @@ export default async function Home(props: {
   const categories = await listCategories()
   const { response: { products } } = await getProductsList({
     countryCode,
-    queryParams: { limit: 12 },
+    queryParams: { limit: 100 },
   })
 
-  // Shuffle products so the homepage looks fresh on every load
-  const shuffledProducts = products ? shuffle(products) : []
+  const shuffledProducts = shuffle(products || []).slice(0, 12)
 
   return (
     <CustomHomeLayout

@@ -11,18 +11,20 @@ export const metadata: Metadata = {
 }
 
 type Params = {
-  params: { query: string; countryCode: string }
-  searchParams: {
+  params: Promise<{ query: string; countryCode: string }>
+  searchParams: Promise<{
     sortBy?: SortOptions
     page?: string
     tag?: string
     category?: string
-  }
+  }>
 }
 
 export default async function SearchResults({ params, searchParams }: Params) {
-  const { query } = params
-  const { sortBy, page, tag, category } = searchParams
+  const [{ query, countryCode }, { sortBy, page, tag, category }] = await Promise.all([
+    params,
+    searchParams,
+  ])
 
   const hits = await search(query).then((data) => data)
 
@@ -40,7 +42,7 @@ export default async function SearchResults({ params, searchParams }: Params) {
       page={page}
       tag={tag}
       category={category}
-      countryCode={params.countryCode}
+      countryCode={countryCode}
     />
   )
 }

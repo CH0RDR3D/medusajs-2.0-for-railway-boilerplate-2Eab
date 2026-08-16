@@ -9,14 +9,15 @@ export const metadata: Metadata = {
 }
 
 type Props = {
-  params: {
+  params: Promise<{
     countryCode: string
-  }
+  }>
 }
 
 export default async function EditorsPickPage({ params }: Props) {
+  const { countryCode } = await params
   const ids = await getDailyCuratedProductIds({
-    countryCode: params.countryCode,
+    countryCode,
     kind: "editors-pick",
   })
 
@@ -30,7 +31,7 @@ export default async function EditorsPickPage({ params }: Props) {
         page={1}
         productsIds={ids}
         sortBy="created_at"
-        countryCode={params.countryCode}
+        countryCode={countryCode}
       />
     </div>
   )

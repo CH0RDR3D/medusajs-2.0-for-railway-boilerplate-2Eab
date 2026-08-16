@@ -19,12 +19,10 @@ export default async function ProductPreview({
     regionId: region.id,
   })
 
-  if (!pricedProduct) {
-    return null
-  }
+  const displayProduct = pricedProduct ?? product
 
   const { cheapestPrice } = getProductPrice({
-    product: pricedProduct,
+    product: displayProduct,
   })
 
   const price = cheapestPrice?.calculated_price_number ?? 0
