@@ -1,7 +1,7 @@
-import Product from "../product-preview"
 import { getRegion } from "@lib/data/regions"
 import { getProductsList } from "@lib/data/products"
 import { HttpTypes } from "@medusajs/types"
+import RelatedProductsCarousel from "./RelatedProductsCarousel"
 
 type RelatedProductsProps = {
   product: HttpTypes.StoreProduct
@@ -64,13 +64,7 @@ export default async function RelatedProducts({
         </p>
       </div>
 
-      <ul className="grid grid-cols-2 small:grid-cols-3 medium:grid-cols-4 gap-x-6 gap-y-8">
-        {products.map((product) => (
-          <li key={product.id}>
-            {region && <Product region={region} product={product} />}
-          </li>
-        ))}
-      </ul>
+      <RelatedProductsCarousel products={products} region={region} countryCode={countryCode} />
     </div>
   )
 }

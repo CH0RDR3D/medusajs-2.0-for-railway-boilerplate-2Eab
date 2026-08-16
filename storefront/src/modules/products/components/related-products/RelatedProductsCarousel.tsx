@@ -1,50 +1,41 @@
 "use client"
 
-import React, { useRef, useEffect, useState, useCallback } from "react"
+import React, { useRef, useEffect, useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { HttpTypes } from "@medusajs/types"
 import { convertToLocale } from "@lib/util/money"
+import { ProductCard } from "@modules/home/components/custom-home/Product-Grid"
 
 interface RelatedProductsCarouselProps {
   products: HttpTypes.StoreProduct[]
   region: HttpTypes.StoreRegion
+  countryCode: string
 }
 
 export default function RelatedProductsCarousel({
   products,
   region,
+  countryCode,
 }: RelatedProductsCarouselProps) {
   const trackRef = useRef<HTMLDivElement>(null)
   const animRef = useRef<number | null>(null)
   const pausedRef = useRef(false)
   const [canScroll, setCanScroll] = useState(false)
   const [hovered, setHovered] = useState<string | null>(null)
+  const [showAll, setShowAll] = useState(false)
 
-  // Duplicate items for seamless loop
-  const items = [...products, ...products]
+  const items = canScroll ? [...products, ...products] : products
 
   const SPEED = 0.5 // px per frame
-
-  const tick = useCallback(() => {
-    const el = trackRef.current
-    if (!el || pausedRef.current) {
-      animRef.current = requestAnimationFrame(tick)
-      return
-    }
-    el.scrollLeft += SPEED
-    // When we've scrolled past the first copy, reset silently
-    const half = el.scrollWidth / 2
-    if (el.scrollLeft >= half) {
-      el.scrollLeft -= half
-    }
-    animRef.current = requestAnimationFrame(tick)
-  }, [])
 
   useEffect(() => {
     const el = trackRef.current
     if (!el) return
-    const check = () => setCanScroll(el.scrollWidth > el.clientWidth + 4)
+    const check = () => {
+      const productsWidth = products.length * 176 + Math.max(products.length - 1, 0) * 16
+      setCanScroll(productsWidth > el.clientWidth + 4)
+    }
     check()
     const ro = new ResizeObserver(check)
     ro.observe(el)
@@ -53,11 +44,20 @@ export default function RelatedProductsCarousel({
 
   useEffect(() => {
     if (!canScroll) return
+    const tick = () => {
+      const el = trackRef.current
+      if (el && !pausedRef.current) {
+        el.scrollLeft += SPEED
+        const loopPoint = el.scrollWidth / 2
+        if (el.scrollLeft >= loopPoint) el.scrollLeft -= loopPoint
+      }
+      animRef.current = requestAnimationFrame(tick)
+    }
     animRef.current = requestAnimationFrame(tick)
     return () => {
       if (animRef.current) cancelAnimationFrame(animRef.current)
     }
-  }, [canScroll, tick])
+  }, [canScroll])
 
   const scroll = (dir: "left" | "right") => {
     const el = trackRef.current
@@ -80,18 +80,19 @@ export default function RelatedProductsCarousel({
   return (
     <div className="relative group/carousel">
       {/* Arrow left */}
-      <button
+      {canScroll && <button
         onClick={() => scroll("left")}
         className="absolute left-0 top-1/2 -translate-y-1/2 z-10 -translate-x-2 w-8 h-8 rounded-full
           bg-[var(--bg-card)] border border-black/10 dark:border-white/10 shadow-md
           flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--text-primary)]
-          opacity-0 group-hover/carousel:opacity-100 transition-opacity duration-200"
+          opacity-0 group-hover/carousel:opacity-100 focus-visible:opacity-100 transition-opacity duration-200
+          focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
         aria-label="Scroll left"
       >
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
         </svg>
-      </button>
+      </button>}
 
       {/* Scrollable track */}
       <div
@@ -99,6 +100,8 @@ export default function RelatedProductsCarousel({
         className="flex gap-4 overflow-x-scroll scroll-smooth no-scrollbar"
         onMouseEnter={() => { pausedRef.current = true }}
         onMouseLeave={() => { pausedRef.current = false }}
+        onFocusCapture={() => { pausedRef.current = true }}
+        onBlurCapture={() => { pausedRef.current = false }}
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
         style={{ scrollbarWidth: "none" }}
@@ -115,7 +118,8 @@ export default function RelatedProductsCarousel({
           return (
             <Link
               key={key}
-              href={`/products/${product.handle}`}
+              href={`/${countryCode}/products/${product.handle}`}
+              scroll={false}
               className="flex-shrink-0 w-44 group flex flex-col rounded-xl overflow-hidden border
                 border-black/8 dark:border-white/8 hover:border-amber-400/40
                 hover:ring-1 hover:ring-amber-400/30 transition-all duration-300"
@@ -175,18 +179,39 @@ export default function RelatedProductsCarousel({
       </div>
 
       {/* Arrow right */}
-      <button
+      {canScroll && <button
         onClick={() => scroll("right")}
         className="absolute right-0 top-1/2 -translate-y-1/2 z-10 translate-x-2 w-8 h-8 rounded-full
           bg-[var(--bg-card)] border border-black/10 dark:border-white/10 shadow-md
           flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--text-primary)]
-          opacity-0 group-hover/carousel:opacity-100 transition-opacity duration-200"
+          opacity-0 group-hover/carousel:opacity-100 focus-visible:opacity-100 transition-opacity duration-200
+          focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
         aria-label="Scroll right"
       >
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
         </svg>
-      </button>
+      </button>}
+      <div className="mt-5 flex justify-center">
+        <button
+          type="button"
+          onClick={() => setShowAll((visible) => !visible)}
+          className="rounded-md border border-black/10 bg-[var(--bg-card)] px-4 py-2 text-sm font-semibold text-[var(--text-primary)] transition hover:border-amber-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 dark:border-white/10"
+          aria-expanded={showAll}
+          aria-controls="related-products-all"
+        >
+          {showAll ? "Show fewer products" : "View all related products"}
+        </button>
+      </div>
+      {showAll && (
+        <ul id="related-products-all" className="mt-6 grid grid-cols-2 gap-4 small:grid-cols-3 medium:grid-cols-4">
+          {products.map((product) => (
+            <li key={product.id}>
+              <ProductCard product={product} region={region} />
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   )
 }

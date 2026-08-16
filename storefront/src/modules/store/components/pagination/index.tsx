@@ -1,7 +1,7 @@
 "use client"
 
-import { clx } from "@medusajs/ui"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
+import { ChevronLeft, ChevronRight } from "lucide-react"
 
 export function Pagination({
   page,
@@ -27,7 +27,8 @@ export function Pagination({
     router.push(`${pathname}?${params.toString()}`)
   }
 
-  // Function to render a page button
+  const buttonClass = "inline-flex h-9 min-w-9 items-center justify-center rounded-md border px-3 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 disabled:pointer-events-none disabled:opacity-45"
+
   const renderPageButton = (
     p: number,
     label: string | number,
@@ -35,10 +36,12 @@ export function Pagination({
   ) => (
     <button
       key={p}
-      className={clx("txt-xlarge-plus text-ui-fg-muted", {
-        "text-ui-fg-base hover:text-ui-fg-subtle": isCurrent,
-      })}
+      className={`${buttonClass} ${isCurrent
+        ? "border-amber-500 bg-amber-500 text-black"
+        : "border-black/10 bg-[var(--bg-card)] text-[var(--text-secondary)] hover:border-amber-400 hover:text-[var(--text-primary)] dark:border-white/10"
+      }`}
       disabled={isCurrent}
+      aria-current={isCurrent ? "page" : undefined}
       onClick={() => handlePageChange(p)}
     >
       {label}
@@ -49,7 +52,7 @@ export function Pagination({
   const renderEllipsis = (key: string) => (
     <span
       key={key}
-      className="txt-xlarge-plus text-ui-fg-muted items-center cursor-default"
+      className="flex h-9 items-center px-1 text-sm text-[var(--text-muted)]"
     >
       ...
     </span>
@@ -107,8 +110,31 @@ export function Pagination({
 
   // Render the component
   return (
-    <div className="flex justify-center w-full mt-12">
-      <div className="flex gap-3 items-end" data-testid={dataTestid}>{renderPageButtons()}</div>
-    </div>
+    <nav className="mt-12 flex w-full flex-col items-center gap-3" aria-label="Product pages" data-testid={dataTestid}>
+      <p className="text-xs font-semibold uppercase tracking-widest text-[var(--text-muted)]">
+        Page {page} of {totalPages}
+      </p>
+      <div className="flex flex-wrap items-center justify-center gap-2">
+        <button
+          className={buttonClass}
+          disabled={page === 1}
+          onClick={() => handlePageChange(page - 1)}
+        >
+          <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+          <span className="hidden small:inline">Previous Page</span>
+          <span className="small:hidden">Previous</span>
+        </button>
+        {renderPageButtons()}
+        <button
+          className={buttonClass}
+          disabled={page === totalPages}
+          onClick={() => handlePageChange(page + 1)}
+        >
+          <span className="hidden small:inline">Next Page</span>
+          <span className="small:hidden">Next</span>
+          <ChevronRight className="h-4 w-4" aria-hidden="true" />
+        </button>
+      </div>
+    </nav>
   )
 }

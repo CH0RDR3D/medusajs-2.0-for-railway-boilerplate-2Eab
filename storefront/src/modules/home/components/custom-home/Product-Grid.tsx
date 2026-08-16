@@ -1,10 +1,10 @@
 "use client"
 
 import React, { useState } from "react"
-import Link from "next/link"
 import Image from "next/image"
 import { HttpTypes } from "@medusajs/types"
 import { convertToLocale } from "@lib/util/money"
+import LocalizedClientLink from "@modules/common/components/localized-client-link"
 
 interface ProductGridProps {
   products: HttpTypes.StoreProduct[]
@@ -53,7 +53,7 @@ export function ProductCard({
       : null
 
   return (
-    <Link
+    <LocalizedClientLink
       href={`/products/${product.handle}`}
       className={`group relative flex flex-col rounded-xl overflow-hidden border transition-all duration-300 cursor-pointer ${hovered ? `ring-1 ${accent.ring} border-transparent bg-black/5 dark:bg-white/5` : "border-black/5 dark:border-white/5 bg-transparent"
         }`}
@@ -112,7 +112,7 @@ export function ProductCard({
           <span className={`text-xs font-semibold transition ${accent.link}`}>Shop Now</span>
         </div>
       </div>
-    </Link>
+    </LocalizedClientLink>
   )
 }
 
@@ -141,12 +141,12 @@ export default function ProductGrid({
           {subtitle && <p className="text-xs text-[var(--text-secondary)] mt-0.5">{subtitle}</p>}
         </div>
         {viewAllHref && (
-          <Link
+          <LocalizedClientLink
             href={viewAllHref}
             className={`text-xs font-semibold px-3 py-1.5 rounded-full border ${accent.badge} transition hover:opacity-80`}
           >
             View all →
-          </Link>
+          </LocalizedClientLink>
         )}
       </div>
 

@@ -2,11 +2,10 @@ import React, { Suspense } from "react"
 import { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { getCategoryByHandle } from "@lib/data/categories"
-import { getProductsList } from "@lib/data/products"
 import { getRegion } from "@lib/data/regions"
-import { ProductCard } from "@modules/home/components/custom-home/Product-Grid"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import ProductSidebar from "@modules/store/components/ProductSidebar"
+import PaginatedProducts from "@modules/store/templates/paginated-products"
 
 type Props = {
   params: Promise<{ category: string[]; countryCode: string }>
@@ -34,6 +33,7 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
 
 export default async function CategoryPage(props: Props) {
   const params = await props.params
+  const { page } = await props.searchParams
 
   const countryCode = params.countryCode
   const { product_categories } = await getCategoryByHandle(params.category)
@@ -49,15 +49,6 @@ export default async function CategoryPage(props: Props) {
   if (!region) {
     notFound()
   }
-
-  // Fetch products by category_id (limit 12) as requested
-  const { response: { products } } = await getProductsList({
-    countryCode,
-    queryParams: {
-      limit: 12,
-      category_id: [category.id],
-    },
-  })
 
   return (
     <div className="min-h-screen py-10" style={{ background: "var(--bg-base)" }}>
@@ -117,33 +108,18 @@ export default async function CategoryPage(props: Props) {
           </Suspense>
 
           <div className="w-full">
-            {products.length === 0 ? (
-              <div className="text-center py-20 bg-[var(--bg-card)] rounded-2xl border border-black/10 dark:border-white/10 text-[var(--text-muted)]">
-                No products found in this category.
+            <div className="space-y-6">
+              <div className="border-b border-black/5 pb-4 dark:border-white/5">
+                <h2 className="text-lg font-bold text-[var(--text-primary)] md:text-xl">
+                  Products in {category.name}
+                </h2>
               </div>
-            ) : (
-              <div className="space-y-6">
-                <div className="flex items-center justify-between border-b border-black/5 dark:border-white/5 pb-4">
-                  <h2 className="text-lg md:text-xl font-bold text-[var(--text-primary)]">
-                    Products in {category.name}
-                  </h2>
-                  <span className="text-xs text-[var(--text-muted)]">
-                    Showing {products.length} products
-                  </span>
-                </div>
-                
-                <div className="grid grid-cols-2 small:grid-cols-3 gap-4">
-                  {products.map((product) => (
-                    <ProductCard
-                      key={product.id}
-                      product={product}
-                      region={region}
-                      accentColor="violet"
-                    />
-                  ))}
-                </div>
-              </div>
-            )}
+              <PaginatedProducts
+                page={Math.max(1, Number(page) || 1)}
+                categoryId={category.id}
+                countryCode={countryCode}
+              />
+            </div>
           </div>
         </div>
       </div>

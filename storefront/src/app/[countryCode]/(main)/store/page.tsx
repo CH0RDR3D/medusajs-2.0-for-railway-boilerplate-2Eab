@@ -17,7 +17,7 @@ type Params = {
   }
   params: {
     countryCode: string
-  }>
+  }
 }
 
 export default async function StorePage({ searchParams, params }: Params) {
