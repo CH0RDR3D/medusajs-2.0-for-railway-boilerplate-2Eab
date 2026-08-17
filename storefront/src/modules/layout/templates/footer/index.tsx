@@ -28,12 +28,14 @@ export default async function Footer() {
             >
               <Logo />
             </LocalizedClientLink>
+
             <p className="text-xs leading-relaxed text-[var(--text-secondary)] max-w-sm">
-              Zambia&apos;s multi-sector destination for dependable vehicles, certified automotive care, renewable solar energy, and household essentials.
+              Elevate everyday life with Zambia’s trusted online store — From home essentials and appliances to furniture, beauty, and health, everything you need in one destination.
             </p>
+
             <div className="flex items-start gap-2 text-xs text-[var(--text-secondary)] pt-1">
               <MapPin className="h-4 w-4 shrink-0 text-amber-500 mt-0.5" />
-              <span>Plot No. F/687/A/1/A/8, Makeni Road, Lusaka, Zambia</span>
+              <span>Plot No. 430B Lamasat Complex 2, Makeni-Bonaventure, Linda Road, Lusaka, Zambia</span>
             </div>
           </div>
 
@@ -99,17 +101,17 @@ export default async function Footer() {
                 <>
                   <li>
                     <LocalizedClientLink href="/store" className="hover:text-amber-500">
-                      Vehicles &amp; Auto Care
+                      Appliances
                     </LocalizedClientLink>
                   </li>
                   <li>
                     <LocalizedClientLink href="/store" className="hover:text-amber-500">
-                      Solar Power Systems
+                      Green Energy Solutions
                     </LocalizedClientLink>
                   </li>
                   <li>
                     <LocalizedClientLink href="/store" className="hover:text-amber-500">
-                      Household Goods
+                      Home &amp; Office Essentials
                     </LocalizedClientLink>
                   </li>
                 </>
@@ -147,7 +149,7 @@ export default async function Footer() {
         {/* Bottom Bar */}
         <div className="flex flex-col sm:flex-row items-center justify-between border-t border-[var(--surface-border)] py-6 text-xs text-[var(--text-muted)] gap-3">
           <Text className="txt-compact-small">
-            © {new Date().getFullYear()} SYA Store Lusaka. All rights reserved.
+            © {new Date().getFullYear()} SYA General Dealers LTD - Lusaka. All rights reserved.
           </Text>
           <div className="flex items-center gap-6">
             <LocalizedClientLink href="/about" className="hover:text-[var(--text-primary)] transition">

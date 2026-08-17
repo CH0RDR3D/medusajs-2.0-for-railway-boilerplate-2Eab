@@ -86,3 +86,21 @@ export const getCollectionByHandle = async (
 
   return collections[0] || null
 }
+
+export const searchCollectionProductIds = async (query: string) => {
+  const normalizedQuery = query.trim().toLowerCase()
+  if (!normalizedQuery) return []
+
+  const { collections } = await listCollections({
+    limit: 100,
+    fields: "*products",
+  })
+
+  return collections
+    .filter(
+      (collection) =>
+        collection.title?.toLowerCase().includes(normalizedQuery) ||
+        collection.handle?.toLowerCase().includes(normalizedQuery)
+    )
+    .flatMap((collection) => collection.products?.map((product) => product.id) ?? [])
+}

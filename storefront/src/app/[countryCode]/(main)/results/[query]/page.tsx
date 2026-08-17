@@ -3,6 +3,7 @@ import { Metadata } from "next"
 import SearchResultsTemplate from "@modules/search/templates/search-results-template"
 
 import { search } from "@modules/search/actions"
+import { searchCollectionProductIds } from "@lib/data/collections"
 import { SortOptions } from "@modules/store/components/refinement-list/sort-products"
 
 export const metadata: Metadata = {
@@ -26,13 +27,16 @@ export default async function SearchResults({ params, searchParams }: Params) {
     searchParams,
   ])
 
-  const hits = await search(query).then((data) => data)
+  const [hits, collectionProductIds] = await Promise.all([
+    search(query),
+    searchCollectionProductIds(query).catch(() => []),
+  ])
 
-  const ids = hits
-    .map((h) => h.objectID || h.id)
+  const ids = [...hits.map((h) => h.objectID || h.id), ...collectionProductIds]
     .filter((id): id is string => {
       return typeof id === "string"
     })
+    .filter((id, index, allIds) => allIds.indexOf(id) === index)
 
   return (
     <SearchResultsTemplate

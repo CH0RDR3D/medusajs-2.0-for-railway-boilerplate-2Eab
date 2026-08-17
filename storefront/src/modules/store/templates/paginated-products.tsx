@@ -20,6 +20,7 @@ export default async function PaginatedProducts({
   categoryId,
   category,
   tag,
+  query,
   productsIds,
   countryCode,
 }: {
@@ -29,6 +30,7 @@ export default async function PaginatedProducts({
   categoryId?: string
   category?: string
   tag?: string
+  query?: string
   productsIds?: string[]
   countryCode: string
 }) {
@@ -66,6 +68,7 @@ export default async function PaginatedProducts({
     sortBy,
     tag,
     category,
+    q: query,
     countryCode,
   })
 

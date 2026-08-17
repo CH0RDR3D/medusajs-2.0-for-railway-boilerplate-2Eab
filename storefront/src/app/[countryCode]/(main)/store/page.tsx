@@ -10,6 +10,7 @@ export const metadata: Metadata = {
 
 type Params = {
   searchParams: {
+    q?: string
     sortBy?: SortOptions
     page?: string
     tag?: string
@@ -21,11 +22,12 @@ type Params = {
 }
 
 export default async function StorePage({ searchParams, params }: Params) {
-  const { sortBy, page, tag, category } = searchParams
+  const { q, sortBy, page, tag, category } = searchParams
 
   return (
     <StoreTemplate
       sortBy={sortBy}
+      query={q}
       page={page}
       tag={tag}
       category={category}

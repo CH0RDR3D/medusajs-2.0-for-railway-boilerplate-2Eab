@@ -1,13 +1,15 @@
 import { Suspense } from "react"
 import { listCategories } from "@lib/data/categories"
 import { listCollections } from "@lib/data/collections"
+import { retrieveCustomer } from "@lib/data/customer"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import ThemeToggle from "@modules/common/components/theme-toggle"
 import CartButton from "@modules/layout/components/cart-button"
 import NavCategories from "./NavCategories"
 import NavSearch from "./NavSearch"
 import Logo from "@modules/layout/components/logo"
-import { User, MessageSquare, ShoppingBag } from "lucide-react"
+import { MessageSquare, ShoppingBag } from "lucide-react"
+import AccountLink from "@modules/layout/components/account-link"
 
 /**
  * Single-row frosted-glass navigation bar for SYA Store.
@@ -16,9 +18,10 @@ import { User, MessageSquare, ShoppingBag } from "lucide-react"
  *   [Logo] | [Search] | [Categories] | [Account] [Customer Care] [Theme] [Cart]
  */
 export default async function Nav() {
-  const [categories, collectionResult] = await Promise.all([
+  const [categories, collectionResult, customer] = await Promise.all([
     listCategories().catch(() => []),
     listCollections({ limit: 6 }).catch(() => ({ collections: [], count: 0 })),
+    retrieveCustomer().catch(() => null),
   ])
 
   const collections = collectionResult.collections ?? []
@@ -66,20 +69,13 @@ export default async function Nav() {
           <div className="flex items-center gap-x-3 sm:gap-x-4 flex-shrink-0 h-full">
             {/* Account — desktop only */}
             <div className="hidden small:flex items-center">
-              <LocalizedClientLink
-                href="/account"
-                className="
-                  flex items-center gap-1.5 text-xs font-medium
-                  text-[var(--text-secondary)] hover:text-[var(--text-primary)]
-                  transition-colors duration-200
-                  focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:outline-none rounded-md px-2 py-1
-                "
-                data-testid="nav-account-link"
-                aria-label="Your Account and Orders"
-              >
-                <User className="w-3.5 h-3.5 text-amber-500" />
-                <span>Account</span>
-              </LocalizedClientLink>
+              <AccountLink
+                customerName={
+                  [customer?.first_name, customer?.last_name]
+                    .filter(Boolean)
+                    .join(" ") || customer?.email
+                }
+              />
             </div>
 
             {/* Customer Care — desktop only */}

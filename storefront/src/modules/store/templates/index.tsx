@@ -9,12 +9,14 @@ import PaginatedProducts from "./paginated-products"
 
 const StoreTemplate = ({
   sortBy,
+  query,
   page,
   tag,
   category,
   countryCode,
 }: {
   sortBy?: SortOptions
+  query?: string
   page?: string
   tag?: string
   category?: string
@@ -49,6 +51,7 @@ const StoreTemplate = ({
             page={pageNumber}
             tag={tag}
             category={category}
+            query={query}
             countryCode={countryCode}
           />
         </Suspense>

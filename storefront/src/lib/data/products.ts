@@ -72,10 +72,8 @@ const fetchStoreProducts = async <T,>(
 /**
  * Fetch a paginated list of products from Medusa.
  *
- * IMPORTANT: min_price, max_price, and q are NOT supported by the Medusa v2
- * /store/products endpoint. They are stripped from queryParams before the
- * request is sent to the backend and must be applied client/server-side after
- * the products are returned.
+ * Price bounds are applied locally because the storefront supports them across
+ * Medusa versions. Medusa's `q` parameter is sent to the Store API directly.
  */
 export const listProducts = async ({
   pageParam = 1,
@@ -122,7 +120,7 @@ export const listProducts = async ({
   const {
     min_price: _min,
     max_price: _max,
-    q: _q,
+    q,
     ...backendQueryParams
   } = (queryParams || {}) as any
 
@@ -192,7 +190,7 @@ export const listProductsWithSort = async ({
   const limit = queryParams?.limit || 12
   const optionFilters = Array.from(
     new Set((optionValueIds || []).filter(Boolean))
-  )
+  ) as string[]
 
   // Resolve the region so we can match prices by region_id / currency_code
   const region = await getRegion(countryCode)
@@ -204,6 +202,7 @@ export const listProductsWithSort = async ({
     queryParams: {
       ...queryParams,
       ...(optionFilters.length ? { option_value_id: optionFilters } : {}),
+      ...(q?.trim() ? { q: q.trim() } : {}),
       limit: 100,
     },
     countryCode,
