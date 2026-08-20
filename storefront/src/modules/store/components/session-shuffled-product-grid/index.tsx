@@ -82,3 +82,36 @@ export function SessionShuffledProductGrid({
     </>
   )
 }
+
+export function ProductGridWithoutShuffle({
+  products,
+  region,
+  page,
+  totalPages,
+}: {
+  products: HttpTypes.StoreProduct[]
+  region: HttpTypes.StoreRegion
+  page: number
+  totalPages: number
+}) {
+  const pageSize = 12
+  const pageProducts = products.slice((page - 1) * pageSize, page * pageSize)
+
+  return (
+    <>
+      <ul
+        className="grid grid-cols-2 w-full small:grid-cols-3 medium:grid-cols-4 gap-x-6 gap-y-8"
+        data-testid="products-list"
+      >
+        {pageProducts.map((product) => (
+          <li key={product.id}>
+            <ProductCard product={product} region={region} />
+          </li>
+        ))}
+      </ul>
+      {totalPages > 1 && (
+        <Pagination data-testid="product-pagination" page={page} totalPages={totalPages} />
+      )}
+    </>
+  )
+}

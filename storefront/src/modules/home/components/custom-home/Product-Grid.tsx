@@ -38,10 +38,12 @@ export function ProductCard({
   product,
   region,
   accentColor = "amber",
+  showShopNow = true,
 }: {
   product: HttpTypes.StoreProduct
   region: HttpTypes.StoreRegion
   accentColor?: "amber" | "violet" | "emerald"
+  showShopNow?: boolean
 }) {
   const [hovered, setHovered] = useState(false)
   const accent = ACCENT[accentColor]
@@ -109,7 +111,9 @@ export function ProductCard({
               </span>
             )}
           </div>
-          <span className={`text-xs font-semibold transition ${accent.link}`}>Shop Now</span>
+          {showShopNow && (
+            <span className={`text-xs font-semibold transition ${accent.link}`}>Shop Now</span>
+          )}
         </div>
       </div>
     </LocalizedClientLink>

@@ -1,6 +1,6 @@
 import { Metadata } from "next"
 import { listCategories } from "@lib/data/categories"
-import { getProductsList } from "@lib/data/products"
+import { getProductsList, getDailyCuratedProductIds, getProductsById } from "@lib/data/products"
 import { getRegion } from "@lib/data/regions"
 import CustomHomeLayout from "@modules/home/components/custom-home"
 import { shuffle } from "lodash"
@@ -32,12 +32,24 @@ export default async function Home(props: {
     queryParams: { limit: 100 },
   })
 
+  // Dynamically fetch today's trending "Editor's Pick" products
+  const editorsPickIds = await getDailyCuratedProductIds({
+    countryCode,
+    kind: "editors-pick",
+    count: 12,
+  })
+  const editorsPickProducts = await getProductsById({
+    ids: editorsPickIds,
+    regionId: region.id,
+  })
+
   const shuffledProducts = shuffle(products || []).slice(0, 12)
 
   return (
     <CustomHomeLayout
       categories={categories || []}
       products={shuffledProducts}
+      editorsPickProducts={editorsPickProducts}
       region={region}
     />
   )

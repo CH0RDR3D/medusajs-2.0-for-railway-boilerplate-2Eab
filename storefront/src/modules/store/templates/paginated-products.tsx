@@ -1,6 +1,6 @@
 import { getProductsListWithSort } from "@lib/data/products"
 import { getRegion } from "@lib/data/regions"
-import { SessionShuffledProductGrid } from "@modules/store/components/session-shuffled-product-grid"
+import { SessionShuffledProductGrid, ProductGridWithoutShuffle } from "@modules/store/components/session-shuffled-product-grid"
 import { SortOptions } from "@modules/store/components/refinement-list/sort-products"
 
 const PRODUCT_LIMIT = 12
@@ -23,6 +23,7 @@ export default async function PaginatedProducts({
   query,
   productsIds,
   countryCode,
+  shuffle = true,
 }: {
   sortBy?: SortOptions
   page: number
@@ -33,6 +34,7 @@ export default async function PaginatedProducts({
   query?: string
   productsIds?: string[]
   countryCode: string
+  shuffle?: boolean
 }) {
   const queryParams: PaginatedProductsParams = {
     limit: 100,
@@ -76,13 +78,22 @@ export default async function PaginatedProducts({
 
   return (
     <>
-      <SessionShuffledProductGrid
-        products={products}
-        region={region}
-        page={page}
-        totalPages={totalPages}
-        storageKey={[collectionId || "all", categoryId || "all", tag || "all", category || "all", sortBy || "created_at"].join(":")}
-      />
+      {shuffle ? (
+        <SessionShuffledProductGrid
+          products={products}
+          region={region}
+          page={page}
+          totalPages={totalPages}
+          storageKey={[collectionId || "all", categoryId || "all", tag || "all", category || "all", sortBy || "created_at"].join(":")}
+        />
+      ) : (
+        <ProductGridWithoutShuffle
+          products={products}
+          region={region}
+          page={page}
+          totalPages={totalPages}
+        />
+      )}
     </>
   )
 }

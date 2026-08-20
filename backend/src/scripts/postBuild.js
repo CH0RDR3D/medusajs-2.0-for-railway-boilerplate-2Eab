@@ -26,7 +26,17 @@ if (fs.existsSync(envPath)) {
 
 // Install dependencies
 console.log('Installing dependencies in .medusa/server...');
-execSync('pnpm i --prod --frozen-lockfile', { 
-  cwd: MEDUSA_SERVER_PATH,
-  stdio: 'inherit'
-});
+try {
+  execSync('pnpm i --prod --frozen-lockfile', {
+    cwd: MEDUSA_SERVER_PATH,
+    stdio: 'inherit'
+  });
+} catch (err) {
+  // Railway's cached pnpm content-addressable store can go stale/corrupt
+  // (ERR_PNPM_ENOENT copyfile), so retry once forcing a re-fetch from the registry.
+  console.warn('Initial pnpm install failed, retrying with --force (bypassing pnpm store cache)...');
+  execSync('pnpm i --prod --frozen-lockfile --force', {
+    cwd: MEDUSA_SERVER_PATH,
+    stdio: 'inherit'
+  });
+}

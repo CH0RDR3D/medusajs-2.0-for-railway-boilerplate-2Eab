@@ -3,18 +3,20 @@
 import React, { useState } from "react"
 import Hero from "../hero"
 import ProductGrid from "./Product-Grid"
+import EditorsPickCarousel from "../editor-picks"
 import Link from "next/link"
 import Image from "next/image"
 import { useParams, useRouter } from "next/navigation"
 import { HttpTypes } from "@medusajs/types"
 
 interface HomeLayoutProps {
-  categories: HttpTypes.StoreProductCategory[]
+  categories: HttpTypes.StoreProduct[]
   products: HttpTypes.StoreProduct[]
+  editorsPickProducts: HttpTypes.StoreProduct[]
   region: HttpTypes.StoreRegion
 }
 
-export default function CustomHomeLayout({ categories, products, region }: HomeLayoutProps) {
+export default function CustomHomeLayout({ categories, products, editorsPickProducts, region }: HomeLayoutProps) {
   const router = useRouter()
   const params = useParams()
   const countryCode = (params?.countryCode as string) || process.env.NEXT_PUBLIC_DEFAULT_REGION || "zm"
@@ -177,7 +179,7 @@ export default function CustomHomeLayout({ categories, products, region }: HomeL
         </div>
       </div>
 
-      {/* ── Product Grids ──────────────────────────────────────── */}
+      {/* ── Product Grids & Carousels ──────────────────────────── */}
       <div className="max-w-7xl mx-auto px-4 mt-10 space-y-8">
         {/* Deals section — emerald accent */}
         <ProductGrid
@@ -186,17 +188,14 @@ export default function CustomHomeLayout({ categories, products, region }: HomeL
           title="Today's Deals"
           subtitle="Handpicked discounts — updated daily"
           accentColor="emerald"
-          viewAllHref={`/${countryCode}/deals`}
+          viewAllHref="/deals"
         />
 
-        {/* Featured products — amber accent */}
-        <ProductGrid
-          products={featuredProducts.length ? featuredProducts : products}
+        {/* Editor's Picks section — horizontal carousel */}
+        <EditorsPickCarousel
+          products={editorsPickProducts}
           region={region}
-          title="Editor's Picks"
-          subtitle="Curated favourites from our collection"
-          accentColor="amber"
-          viewAllHref={`/${countryCode}/editors-pick`}
+          countryCode={countryCode}
         />
 
         {/* All products / new arrivals — violet accent */}
@@ -207,7 +206,7 @@ export default function CustomHomeLayout({ categories, products, region }: HomeL
             title="New Arrivals"
             subtitle="Just landed in the store"
             accentColor="violet"
-            viewAllHref={`/${countryCode}/store`}
+            viewAllHref="/new-arrivals"
           />
         )}
       </div>

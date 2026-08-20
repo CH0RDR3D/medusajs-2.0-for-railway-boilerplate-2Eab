@@ -11,6 +11,7 @@ interface ProductSidebarProps {
   activeTagValue?: string
   activeCategoryHandle?: string
   activeCollectionHandle?: string
+  basePath?: string
 }
 
 export default async function ProductSidebar({
@@ -20,6 +21,7 @@ export default async function ProductSidebar({
   activeTagValue,
   activeCategoryHandle,
   activeCollectionHandle,
+  basePath = "/store",
 }: ProductSidebarProps) {
   // Fetch categories, collections and tags in parallel on the server
   const [categories, collectionsResult, facets] = await Promise.all([
@@ -65,7 +67,7 @@ export default async function ProductSidebar({
         {/* On mobile, display as a horizontal scroll, on desktop as vertical list */}
         <div className="flex small:flex-col gap-2 overflow-x-auto no-scrollbar -mx-2 px-2 small:mx-0 small:px-0">
           <LocalizedClientLink
-            href="/store"
+            href={basePath}
             className={`
               flex-shrink-0 px-3 py-2 text-xs font-medium rounded-xl transition duration-150 whitespace-nowrap
               ${!currentCategoryId && !currentCollectionId && !activeTagValue
@@ -86,7 +88,7 @@ export default async function ProductSidebar({
             return (
               <React.Fragment key={category.id}>
                 <LocalizedClientLink
-                  href={`/categories/${category.handle}`}
+                  href={basePath === "/store" ? `/categories/${category.handle}` : `${basePath}?category=${category.handle}`}
                   className={`
                     flex-shrink-0 px-3 py-2 text-xs font-medium rounded-xl transition duration-150 whitespace-nowrap
                     ${isActive
@@ -107,7 +109,7 @@ export default async function ProductSidebar({
                       return (
                         <LocalizedClientLink
                           key={child.id}
-                          href={`/categories/${child.handle}`}
+                          href={basePath === "/store" ? `/categories/${child.handle}` : `${basePath}?category=${child.handle}`}
                           className={`
                             px-2 py-1 text-[11px] font-medium rounded-lg transition duration-150
                             ${isChildActive
@@ -141,7 +143,7 @@ export default async function ProductSidebar({
               return (
                 <LocalizedClientLink
                   key={collection.id}
-                  href={`/collections/${collection.handle}`}
+                  href={basePath === "/store" ? `/collections/${collection.handle}` : `${basePath}?collection=${collection.handle}`}
                   className={`
                     flex-shrink-0 px-3 py-2 text-xs font-medium rounded-xl transition duration-150 whitespace-nowrap
                     ${isActive
@@ -171,7 +173,7 @@ export default async function ProductSidebar({
               return (
                 <LocalizedClientLink
                   key={tag}
-                  href={`/store?tag=${encodeURIComponent(tag)}`}
+                  href={`${basePath}?tag=${encodeURIComponent(tag)}`}
                   className={`
                     px-2.5 py-1.5 text-[10px] font-semibold uppercase tracking-wider rounded-lg border transition duration-150
                     ${isActive
