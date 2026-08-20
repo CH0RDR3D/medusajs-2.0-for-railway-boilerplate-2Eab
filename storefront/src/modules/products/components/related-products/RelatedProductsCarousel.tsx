@@ -82,7 +82,8 @@ export default function RelatedProductsCarousel({
       {/* Arrow left */}
       {canScroll && <button
         onClick={() => scroll("left")}
-        className="absolute left-0 top-1/2 -translate-y-1/2 z-10 -translate-x-2 w-8 h-8 rounded-full
+        // 44px min tap target for touch accessibility
+        className="absolute left-0 top-1/2 -translate-y-1/2 z-10 -translate-x-2 w-11 h-11 rounded-full
           bg-[var(--bg-card)] border border-black/10 dark:border-white/10 shadow-md
           flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--text-primary)]
           opacity-0 group-hover/carousel:opacity-100 focus-visible:opacity-100 transition-opacity duration-200
@@ -181,7 +182,8 @@ export default function RelatedProductsCarousel({
       {/* Arrow right */}
       {canScroll && <button
         onClick={() => scroll("right")}
-        className="absolute right-0 top-1/2 -translate-y-1/2 z-10 translate-x-2 w-8 h-8 rounded-full
+        // 44px min tap target for touch accessibility
+        className="absolute right-0 top-1/2 -translate-y-1/2 z-10 translate-x-2 w-11 h-11 rounded-full
           bg-[var(--bg-card)] border border-black/10 dark:border-white/10 shadow-md
           flex items-center justify-center text-[var(--text-secondary)] hover:text-[var(--text-primary)]
           opacity-0 group-hover/carousel:opacity-100 focus-visible:opacity-100 transition-opacity duration-200

@@ -3,11 +3,14 @@
 import { HttpTypes } from "@medusajs/types"
 import { Container } from "@medusajs/ui"
 import Image from "next/image"
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
 type ImageGalleryProps = {
   images: HttpTypes.StoreProductImage[]
 }
+
+// Minimum horizontal drag distance (px) to register as a swipe.
+const SWIPE_THRESHOLD = 40
 
 const ImageGallery = ({ images }: ImageGalleryProps) => {
   const validImages = useMemo(
@@ -16,19 +19,30 @@ const ImageGallery = ({ images }: ImageGalleryProps) => {
   )
   const [selectedIndex, setSelectedIndex] = useState(0)
   const thumbnailsRef = useRef<HTMLDivElement>(null)
+  const touchStartX = useRef(0)
   const selectedImage = validImages[selectedIndex]
 
-  useEffect(() => {
-    if (validImages.length < 2) {
-      return
+  const goTo = useCallback(
+    (index: number) => {
+      if (!validImages.length) return
+      setSelectedIndex(((index % validImages.length) + validImages.length) % validImages.length)
+    },
+    [validImages.length]
+  )
+
+  const goPrev = useCallback(() => goTo(selectedIndex - 1), [goTo, selectedIndex])
+  const goNext = useCallback(() => goTo(selectedIndex + 1), [goTo, selectedIndex])
+
+  // Manual swipe navigation only — no auto-advance.
+  const onTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX
+  }
+  const onTouchEnd = (e: React.TouchEvent) => {
+    const diff = touchStartX.current - e.changedTouches[0].clientX
+    if (Math.abs(diff) > SWIPE_THRESHOLD) {
+      diff > 0 ? goNext() : goPrev()
     }
-
-    const interval = window.setInterval(() => {
-      setSelectedIndex((current) => (current + 1) % validImages.length)
-    }, 5000)
-
-    return () => window.clearInterval(interval)
-  }, [validImages.length])
+  }
 
   useEffect(() => {
     const activeThumbnail = thumbnailsRef.current?.querySelector(
@@ -52,6 +66,8 @@ const ImageGallery = ({ images }: ImageGalleryProps) => {
         <Container
           className="relative aspect-square w-full overflow-hidden bg-ui-bg-subtle rounded-rounded"
           id={selectedImage.id}
+          onTouchStart={onTouchStart}
+          onTouchEnd={onTouchEnd}
         >
           <Image
             src={selectedImage.url}
@@ -64,6 +80,32 @@ const ImageGallery = ({ images }: ImageGalleryProps) => {
               objectFit: "cover",
             }}
           />
+
+          {validImages.length > 1 && (
+            <>
+              {/* Manual-only prev/next controls — min 44px tap target for touch */}
+              <button
+                type="button"
+                onClick={goPrev}
+                className="absolute left-2 top-1/2 -translate-y-1/2 flex items-center justify-center w-11 h-11 rounded-full bg-ui-bg-base/80 text-ui-fg-base shadow-md hover:bg-ui-bg-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
+                aria-label="Previous image"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+              <button
+                type="button"
+                onClick={goNext}
+                className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center justify-center w-11 h-11 rounded-full bg-ui-bg-base/80 text-ui-fg-base shadow-md hover:bg-ui-bg-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
+                aria-label="Next image"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+            </>
+          )}
         </Container>
 
         {validImages.length > 1 && (
@@ -76,10 +118,11 @@ const ImageGallery = ({ images }: ImageGalleryProps) => {
                 key={image.id}
                 type="button"
                 // Keep thumbnail selection local to avoid route-level re-renders.
-                onClick={() => setSelectedIndex(index)}
-                className="shrink-0 w-20 small:w-24 rounded-rounded overflow-hidden snap-center"
+                onClick={() => goTo(index)}
+                className="shrink-0 w-20 small:w-24 min-h-11 rounded-rounded overflow-hidden snap-center"
                 data-thumbnail-index={index}
                 aria-label={`Select product image ${index + 1}`}
+                aria-current={index === selectedIndex}
               >
                 <Container
                   className="relative aspect-square w-full overflow-hidden bg-ui-bg-subtle"

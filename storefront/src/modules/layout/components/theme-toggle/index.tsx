@@ -15,7 +15,7 @@ export default function ThemeToggle() {
 
   if (!mounted) {
     return (
-      <div className="w-8 h-8 rounded-full bg-[var(--surface-card)] border border-[var(--surface-border)] opacity-0" />
+      <div className="w-11 h-11 rounded-full bg-[var(--surface-card)] border border-[var(--surface-border)] opacity-0" />
     )
   }
 
@@ -26,8 +26,10 @@ export default function ThemeToggle() {
   return (
     <button
       onClick={toggleTheme}
-      className="flex items-center justify-center w-8 h-8 rounded-full bg-[var(--surface-card)] border border-[var(--surface-border)] hover:opacity-80 focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:outline-none transition-all duration-200"
-      aria-label="Toggle theme"
+      // 44px min tap target for touch accessibility, aria-pressed reflects state
+      className="flex items-center justify-center w-11 h-11 rounded-full bg-[var(--surface-card)] border border-[var(--surface-border)] hover:opacity-80 focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:outline-none transition-all duration-200"
+      aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+      aria-pressed={theme === "dark"}
     >
       {theme === "dark" ? (
         <Sun className="w-4 h-4 text-amber-500" />
