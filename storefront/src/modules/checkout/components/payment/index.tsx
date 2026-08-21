@@ -87,7 +87,7 @@ const Payment = ({
             <div className="rounded-rounded border border-[var(--surface-border)] p-4">
               <Text className="txt-medium-plus text-ui-fg-base">Payment provider</Text>
               <Text className="txt-medium text-ui-fg-subtle mt-1" data-testid="payment-method-summary">
-                Lenco Pay by <span className="text-ui-fg-base">BROADWAY</span>
+                Lenco Payment
               </Text>
             </div>
           )}
@@ -151,7 +151,7 @@ const Payment = ({
                   className="txt-medium text-ui-fg-subtle"
                   data-testid="payment-method-summary"
                 >
-                  Lenco Cashless Pay
+                  Lenco Payment
                 </Text>
               </div>
             </div>

@@ -47,7 +47,7 @@ export default function NavSearch() {
       <input
         type="search"
         aria-label="Search products"
-        placeholder="Search products…"
+        placeholder="Search products by title, category, or tag..."
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         className="

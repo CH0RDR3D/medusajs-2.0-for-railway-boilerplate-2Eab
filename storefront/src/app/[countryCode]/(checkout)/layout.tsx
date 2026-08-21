@@ -1,7 +1,6 @@
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import ChevronDown from "@modules/common/icons/chevron-down"
 import MedusaCTA from "@modules/layout/components/medusa-cta"
-import ThemeToggle from "@modules/layout/components/theme-toggle"
 
 export default function CheckoutLayout({
   children,
@@ -32,9 +31,7 @@ export default function CheckoutLayout({
           >
             SYA Store
           </LocalizedClientLink>
-          <div className="flex-1 basis-0 flex justify-end">
-            <ThemeToggle />
-          </div>
+          <div className="flex-1 basis-0 flex justify-end" />
         </nav>
       </div>
       <div className="relative" data-testid="checkout-container">{children}</div>

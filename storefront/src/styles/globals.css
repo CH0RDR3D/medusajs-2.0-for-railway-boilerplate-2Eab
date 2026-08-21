@@ -10,6 +10,9 @@
   --surface-border: #dbe2ea;
   --nav-bg: rgba(255, 255, 255, 0.85);
   --nav-border: rgba(0, 0, 0, 0.08);
+  --text-primary: #111827;
+  --text-secondary: #4b5563;
+  --text-muted: #9ca3af;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -33,6 +36,9 @@ html.light {
   --surface-border: #dbe2ea;
   --nav-bg: rgba(255, 255, 255, 0.85);
   --nav-border: rgba(0, 0, 0, 0.08);
+  --text-primary: #111827;
+  --text-secondary: #4b5563;
+  --text-muted: #9ca3af;
   color-scheme: light;
 }
 
@@ -44,6 +50,9 @@ html.dark {
   --surface-border: #2b3953;
   --nav-bg: rgba(11, 18, 32, 0.85);
   --nav-border: rgba(255, 255, 255, 0.08);
+  --text-primary: #e5e7eb;
+  --text-secondary: #9ca3af;
+  --text-muted: #6b7280;
   color-scheme: dark;
 }
 

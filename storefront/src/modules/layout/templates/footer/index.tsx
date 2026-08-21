@@ -4,6 +4,7 @@ import { Text, clx } from "@medusajs/ui"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import MedusaCTA from "@modules/layout/components/medusa-cta"
 import Logo from "@modules/layout/components/logo"
+import ThemeToggle from "@modules/layout/components/theme-toggle"
 import { MapPin, Phone, Mail, Clock } from "lucide-react"
 
 /**
@@ -158,6 +159,7 @@ export default async function Footer() {
             <LocalizedClientLink href="/customer-care" className="hover:text-[var(--text-primary)] transition">
               Customer Care
             </LocalizedClientLink>
+            <ThemeToggle />
             <MedusaCTA />
           </div>
         </div>

@@ -95,8 +95,7 @@ export default async function Nav() {
               </LocalizedClientLink>
             </div>
 
-            {/* Theme toggle — always visible */}
-            <ThemeToggle />
+
 
             {/* Cart — always visible */}
             <Suspense
