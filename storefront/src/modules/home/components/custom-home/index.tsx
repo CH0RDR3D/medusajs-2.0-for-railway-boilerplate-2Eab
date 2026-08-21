@@ -10,7 +10,7 @@ import { useParams, useRouter } from "next/navigation"
 import { HttpTypes } from "@medusajs/types"
 
 interface HomeLayoutProps {
-  categories: HttpTypes.StoreProduct[]
+  categories: HttpTypes.StoreProductCategory[]
   products: HttpTypes.StoreProduct[]
   editorsPickProducts: HttpTypes.StoreProduct[]
   region: HttpTypes.StoreRegion

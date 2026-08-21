@@ -365,6 +365,42 @@ export const getProductsById = async ({
     return []
   }
 
+  // If a single ID is requested, fetch directly using the v2 single product endpoint
+  if (ids.length === 1) {
+    const id = ids[0]
+    const baseUrl = getMedusaBackendUrl()
+    const url = new URL(`${baseUrl}/store/products/${id}`)
+    if (regionId) {
+      url.searchParams.set("region_id", regionId)
+    }
+    url.searchParams.set(
+      "fields",
+      "*variants.calculated_price,+variants.inventory_quantity,*variants.images,*variants.options,+metadata,+tags,*variants.prices,*categories"
+    )
+
+    try {
+      const response = await fetch(url.toString(), {
+        method: "GET",
+        headers: getPublishableApiKey()
+          ? {
+              "x-publishable-api-key": getPublishableApiKey(),
+            }
+          : undefined,
+        next: { revalidate: 300, tags: ["products"] },
+        cache: "force-cache",
+      })
+
+      if (response.ok) {
+        const data = (await response.json()) as { product?: HttpTypes.StoreProduct }
+        if (data.product) {
+          return [data.product]
+        }
+      }
+    } catch (e) {
+      console.error(`Failed to fetch product by id: ${id}`, e)
+    }
+  }
+
   const { response } = await listProducts({
     regionId,
     queryParams: {

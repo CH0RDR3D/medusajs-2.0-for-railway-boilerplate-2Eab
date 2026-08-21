@@ -15,7 +15,7 @@ export default async function Footer() {
   const { product_categories } = await getCategoriesList(0, 4)
 
   return (
-    <footer className="border-t border-[var(--surface-border)] bg-[var(--bg-card)] w-full text-[var(--text-primary)] transition-colors duration-200">
+    <footer className="border-t border-[var(--surface-border)] bg-[var(--surface-card)] w-full text-[var(--text-primary)] transition-colors duration-200">
       <div className="content-container max-w-6xl mx-auto px-4 sm:px-6">
         {/* Main Footer Columns */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-8 py-12">

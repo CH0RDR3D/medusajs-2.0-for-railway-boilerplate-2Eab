@@ -10,6 +10,7 @@ export async function POST(request: Request) {
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${process.env.LENCO_SECRET_KEY}`,
+        "User-Agent": "SYA-Storefront/2.0.0",
       },
       body: JSON.stringify({
         amount: body.amount,

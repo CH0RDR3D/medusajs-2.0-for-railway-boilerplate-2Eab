@@ -11,9 +11,6 @@ declare global {
   }
 }
 
-// The Lenco sandbox inline script URL — verified live and returns valid JS.
-// It exposes window.LencoPay = { getPaid: fn } synchronously when executed.
-const LENCO_SCRIPT_SRC = "https://pay.sandbox.lenco.co/js/v1/inline.js"
 const LENCO_SCRIPT_ID = "lenco-inline-script"
 
 /**
@@ -29,7 +26,7 @@ function resetLencoPay() {
   const existing = document.getElementById(LENCO_SCRIPT_ID)
   if (existing) existing.remove()
   // Also clear any matching src-based script (injected by Next.js <Script>)
-  const byUrl = document.querySelector(`script[src="${LENCO_SCRIPT_SRC}"]`)
+  const byUrl = document.querySelector(`script[src*="lenco.co/js/"]`)
   if (byUrl) byUrl.remove()
   // @ts-ignore — intentionally clearing the singleton
   window.LencoPay = undefined
@@ -54,10 +51,23 @@ export default function LencoButton({ cart }: { cart: HttpTypes.StoreCart }) {
     }
   }, [])
 
+  const getScriptSrc = useCallback(() => {
+    const key =
+      runtimePublicKey ||
+      process.env.NEXT_PUBLIC_LENCO_KEY ||
+      process.env.NEXT_PUBLIC_LENCO_PUBLIC_KEY ||
+      ""
+    const isSandbox = !key || key.startsWith("pub-") || key.includes("test")
+    return isSandbox
+      ? "https://pay.sandbox.lenco.co/js/v2/inline.js"
+      : "https://pay.lenco.co/js/v2/inline.js"
+  }, [runtimePublicKey])
+
   const injectLencoScript = useCallback(() => {
+    const src = getScriptSrc()
     const existing =
       document.getElementById(LENCO_SCRIPT_ID) ||
-      document.querySelector(`script[src="${LENCO_SCRIPT_SRC}"]`)
+      document.querySelector(`script[src="${src}"]`)
 
     if (existing) {
       return
@@ -65,7 +75,7 @@ export default function LencoButton({ cart }: { cart: HttpTypes.StoreCart }) {
 
     const script = document.createElement("script")
     script.id = LENCO_SCRIPT_ID
-    script.src = LENCO_SCRIPT_SRC
+    script.src = src
     script.async = true
     script.onload = () => {
       if (window.LencoPay) {
@@ -78,7 +88,7 @@ export default function LencoButton({ cart }: { cart: HttpTypes.StoreCart }) {
       )
     }
     document.head.appendChild(script)
-  }, [])
+  }, [getScriptSrc])
 
   const startPolling = useCallback((timeoutMs = 8000) => {
     stopPolling()
@@ -108,10 +118,11 @@ export default function LencoButton({ cart }: { cart: HttpTypes.StoreCart }) {
       return
     }
 
-    // Check if script tag already exists in DOM (injected by checkout/page.tsx <Script>)
+    const src = getScriptSrc()
+    // Check if script tag already exists in DOM
     const existing =
       document.getElementById(LENCO_SCRIPT_ID) ||
-      document.querySelector(`script[src="${LENCO_SCRIPT_SRC}"]`)
+      document.querySelector(`script[src="${src}"]`)
 
     if (existing) {
       // Script tag exists — start polling for window.LencoPay to appear
@@ -121,14 +132,14 @@ export default function LencoButton({ cart }: { cart: HttpTypes.StoreCart }) {
     }
 
     // Script not yet in DOM — inject it ourselves
-    console.log("[Lenco] Injecting inline script:", LENCO_SCRIPT_SRC)
+    console.log("[Lenco] Injecting inline script:", src)
     injectLencoScript()
     startPolling(3000)
 
     return () => {
       stopPolling()
     }
-  }, [injectLencoScript, startPolling, stopPolling])
+  }, [injectLencoScript, startPolling, stopPolling, getScriptSrc])
 
   // Cleanup on unmount
   useEffect(() => {

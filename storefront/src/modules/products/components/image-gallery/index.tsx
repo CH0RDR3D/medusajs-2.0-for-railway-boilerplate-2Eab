@@ -18,9 +18,21 @@ const ImageGallery = ({ images }: ImageGalleryProps) => {
     [images]
   )
   const [selectedIndex, setSelectedIndex] = useState(0)
+  const [isHovered, setIsHovered] = useState(false)
   const thumbnailsRef = useRef<HTMLDivElement>(null)
   const touchStartX = useRef(0)
   const selectedImage = validImages[selectedIndex]
+
+  // Auto-scroll through thumbnails when idle (not hovered or touched)
+  useEffect(() => {
+    if (validImages.length <= 1 || isHovered) return
+
+    const interval = setInterval(() => {
+      setSelectedIndex((prev) => (prev + 1) % validImages.length)
+    }, 4000)
+
+    return () => clearInterval(interval)
+  }, [validImages.length, isHovered])
 
   const goTo = useCallback(
     (index: number) => {
@@ -61,7 +73,12 @@ const ImageGallery = ({ images }: ImageGalleryProps) => {
   }
 
   return (
-    <div className="flex flex-col items-start relative w-full">
+    <div
+      className="flex flex-col items-start relative w-full"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      onTouchStart={() => setIsHovered(true)}
+    >
       <div className="flex flex-col flex-1 gap-y-4 w-full">
         <Container
           className="relative aspect-square w-full overflow-hidden bg-ui-bg-subtle rounded-rounded"

@@ -16,6 +16,7 @@ export async function GET(request: Request) {
     const response = await fetch(`${baseUrl}/collections/status/${reference}`, {
       headers: {
         Authorization: `Bearer ${process.env.LENCO_SECRET_KEY}`,
+        "User-Agent": "SYA-Storefront/2.0.0",
       },
     })
 
