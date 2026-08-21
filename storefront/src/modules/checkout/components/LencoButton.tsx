@@ -250,6 +250,13 @@ export default function LencoButton({ cart }: { cart: HttpTypes.StoreCart }) {
             startPolling(5000)
           }
         } catch (err: any) {
+          if (
+            err?.message === "NEXT_REDIRECT" ||
+            err?.digest?.startsWith("NEXT_REDIRECT") ||
+            String(err).includes("NEXT_REDIRECT")
+          ) {
+            throw err
+          }
           console.error("[Lenco] Error during verification fetch:", err)
           setError("Error verifying payment: " + err.message)
           setSubmitting(false)
@@ -276,6 +283,13 @@ export default function LencoButton({ cart }: { cart: HttpTypes.StoreCart }) {
           await initiatePaymentSession(cart, { provider_id: "pp_system_default" })
           await placeOrder()
         } catch (err: any) {
+          if (
+            err?.message === "NEXT_REDIRECT" ||
+            err?.digest?.startsWith("NEXT_REDIRECT") ||
+            String(err).includes("NEXT_REDIRECT")
+          ) {
+            throw err
+          }
           console.error("[Lenco] placeOrder failed after confirmation pending:", err)
           setError(err.message)
           setSubmitting(false)

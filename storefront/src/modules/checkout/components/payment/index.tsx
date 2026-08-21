@@ -44,6 +44,13 @@ const Payment = ({
     setSubmitting(true)
     setError(null)
     await placeOrder().catch((err) => {
+      if (
+        err?.message === "NEXT_REDIRECT" ||
+        err?.digest?.startsWith("NEXT_REDIRECT") ||
+        String(err).includes("NEXT_REDIRECT")
+      ) {
+        throw err
+      }
       setError(err?.message || "Failed to place order")
       setSubmitting(false)
     })
