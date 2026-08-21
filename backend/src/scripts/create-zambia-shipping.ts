@@ -36,7 +36,7 @@ export default async function createZambiaFulfillment({ container }: ExecArgs) {
 
   // 3. Get or create stock location
   let stockLocation;
-  const stockLocations = await stockLocationModuleService.listStockLocations();
+  const stockLocations = await stockLocationModuleService.listStockLocations({});
   if (stockLocations.length) {
     stockLocation = stockLocations[0];
   } else {
