@@ -59,8 +59,8 @@ export default function LencoButton({ cart }: { cart: HttpTypes.StoreCart }) {
       ""
     const isSandbox = !key || key.startsWith("pub-") || key.includes("test")
     return isSandbox
-      ? "https://pay.sandbox.lenco.co/js/v2/inline.js"
-      : "https://pay.lenco.co/js/v2/inline.js"
+      ? "https://pay.sandbox.lenco.co/js/v1/inline.js"
+      : "https://pay.lenco.co/js/v1/inline.js"
   }, [runtimePublicKey])
 
   const injectLencoScript = useCallback(() => {
