@@ -55,13 +55,11 @@ const Shipping: React.FC<ShippingProps> = ({
 
   const set = async (id: string) => {
     setIsLoading(true)
-    await setShippingMethod({ cartId: cart.id, shippingMethodId: id })
-      .catch((err) => {
-        setError(err.message)
-      })
-      .finally(() => {
-        setIsLoading(false)
-      })
+    const res = await setShippingMethod({ cartId: cart.id, shippingMethodId: id })
+    if (res && "error" in res && res.error) {
+      setError(res.error)
+    }
+    setIsLoading(false)
   }
 
   const setDeliveryMode = async (mode: "delivery" | "pickup") => {
@@ -76,11 +74,14 @@ const Shipping: React.FC<ShippingProps> = ({
       setLocationConfirmed(true)
       setIsSavingMode(true)
 
-      await setDeliveryDetails({
+      const detailsRes = await setDeliveryDetails({
         isPickup: true,
-      }).catch((err) => {
-        setError(err.message)
       })
+      if (detailsRes && "error" in detailsRes && detailsRes.error) {
+        setError(detailsRes.error)
+        setIsSavingMode(false)
+        return
+      }
 
       // Automatically assign the first available shipping method (prioritizing free/pickup options)
       if (availableShippingMethods && availableShippingMethods.length > 0) {
@@ -91,9 +92,10 @@ const Shipping: React.FC<ShippingProps> = ({
             o.amount === 0
         ) || availableShippingMethods[0]
 
-        await set(pickupOption.id).catch((err) => {
-          console.error("Failed to auto-set pickup shipping method:", err)
-        })
+        const setRes = await setShippingMethod({ cartId: cart.id, shippingMethodId: pickupOption.id })
+        if (setRes && "error" in setRes && setRes.error) {
+          setError(setRes.error)
+        }
       }
 
       setIsSavingMode(false)
@@ -127,7 +129,7 @@ const Shipping: React.FC<ShippingProps> = ({
     setLocationConfirmed(true)
     setIsSavingMode(true)
 
-    await setDeliveryDetails({
+    const res = await setDeliveryDetails({
       isPickup: false,
       location,
       address: {
@@ -137,9 +139,10 @@ const Shipping: React.FC<ShippingProps> = ({
         postal_code: address.postalCode,
         country_code: address.countryCode,
       },
-    }).catch((err) => {
-      setError(err.message)
     })
+    if (res && "error" in res && res.error) {
+      setError(res.error)
+    }
 
     setIsSavingMode(false)
   }

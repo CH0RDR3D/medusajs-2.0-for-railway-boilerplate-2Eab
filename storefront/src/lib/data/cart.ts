@@ -422,17 +422,18 @@ export async function setShippingMethod({
   cartId: string
   shippingMethodId: string
 }) {
-  const headers = {
-    ...(await getAuthHeaders()),
-  }
+  try {
+    const headers = {
+      ...(await getAuthHeaders()),
+    }
 
-  return sdk.store.cart
-    .addShippingMethod(cartId, { option_id: shippingMethodId }, {}, headers)
-    .then(async () => {
-      const cartCacheTag = await getCacheTag("carts")
-      revalidateTag(cartCacheTag)
-    })
-    .catch(medusaError)
+    await sdk.store.cart.addShippingMethod(cartId, { option_id: shippingMethodId }, {}, headers)
+    const cartCacheTag = await getCacheTag("carts")
+    revalidateTag(cartCacheTag)
+    return { ok: true }
+  } catch (err: any) {
+    return { error: err.message || "Failed to set shipping method" }
+  }
 }
 
 export async function setDeliveryDetails({
@@ -450,72 +451,76 @@ export async function setDeliveryDetails({
     country_code?: string
   }
 }) {
-  const cart = await retrieveCart(undefined, "id,*region,*shipping_address,metadata")
+  try {
+    const cart = await retrieveCart(undefined, "id,*region,*shipping_address,metadata")
 
-  if (!cart?.id || !cart.region) {
-    throw new Error("No existing cart found when updating delivery details")
+    if (!cart?.id || !cart.region) {
+      throw new Error("No existing cart found when updating delivery details")
+    }
+
+    const regionCountries = await getRegionCountryCodes(cart.region)
+
+    const defaultRegionCountryCode = regionCountries[0] || "zm"
+    const requestedCountryCode =
+      address?.country_code?.toLowerCase() ||
+      cart.shipping_address?.country_code?.toLowerCase() ||
+      defaultRegionCountryCode
+
+    const countryCode = regionCountries.includes(requestedCountryCode)
+      ? requestedCountryCode
+      : defaultRegionCountryCode
+
+    const pickupAddress = {
+      address_1: "Store Pickup",
+      city: "Lusaka",
+      province: "Lusaka",
+      postal_code: "10101",
+      country_code: defaultRegionCountryCode,
+      lat: -15.3875,
+      lng: 28.3228,
+    }
+
+    const resolvedLocation = isPickup
+      ? { lat: pickupAddress.lat, lng: pickupAddress.lng }
+      : {
+          lat: location?.lat ?? Number(cart.metadata?.lat ?? 0),
+          lng: location?.lng ?? Number(cart.metadata?.lng ?? 0),
+        }
+
+    const shippingAddress = {
+      first_name: cart.shipping_address?.first_name || "",
+      last_name: cart.shipping_address?.last_name || "",
+      phone: cart.shipping_address?.phone || "",
+      address_1: isPickup
+        ? pickupAddress.address_1
+        : address?.address_1 || cart.shipping_address?.address_1 || "Google Map Location",
+      city: isPickup
+        ? pickupAddress.city
+        : address?.city || cart.shipping_address?.city || "Lusaka",
+      province: isPickup
+        ? pickupAddress.province
+        : address?.province || cart.shipping_address?.province || "",
+      postal_code: isPickup
+        ? pickupAddress.postal_code
+        : address?.postal_code || cart.shipping_address?.postal_code || "10101",
+      country_code: isPickup ? pickupAddress.country_code : countryCode,
+    }
+
+    await updateCart({
+      shipping_address: shippingAddress,
+      billing_address: shippingAddress,
+      metadata: {
+        ...(cart.metadata || {}),
+        is_pickup: isPickup,
+        lat: resolvedLocation.lat,
+        lng: resolvedLocation.lng,
+      },
+    } as HttpTypes.StoreUpdateCart)
+
+    return { ok: true }
+  } catch (err: any) {
+    return { error: err.message || "Failed to update delivery details" }
   }
-
-  const regionCountries = await getRegionCountryCodes(cart.region)
-
-  const defaultRegionCountryCode = regionCountries[0] || "zm"
-  const requestedCountryCode =
-    address?.country_code?.toLowerCase() ||
-    cart.shipping_address?.country_code?.toLowerCase() ||
-    defaultRegionCountryCode
-
-  const countryCode = regionCountries.includes(requestedCountryCode)
-    ? requestedCountryCode
-    : defaultRegionCountryCode
-
-  const pickupAddress = {
-    address_1: "Store Pickup",
-    city: "Lusaka",
-    province: "Lusaka",
-    postal_code: "10101",
-    country_code: defaultRegionCountryCode,
-    lat: -15.3875,
-    lng: 28.3228,
-  }
-
-  const resolvedLocation = isPickup
-    ? { lat: pickupAddress.lat, lng: pickupAddress.lng }
-    : {
-        lat: location?.lat ?? Number(cart.metadata?.lat ?? 0),
-        lng: location?.lng ?? Number(cart.metadata?.lng ?? 0),
-      }
-
-  const shippingAddress = {
-    first_name: cart.shipping_address?.first_name || "",
-    last_name: cart.shipping_address?.last_name || "",
-    phone: cart.shipping_address?.phone || "",
-    address_1: isPickup
-      ? pickupAddress.address_1
-      : address?.address_1 || cart.shipping_address?.address_1 || "Google Map Location",
-    city: isPickup
-      ? pickupAddress.city
-      : address?.city || cart.shipping_address?.city || "Lusaka",
-    province: isPickup
-      ? pickupAddress.province
-      : address?.province || cart.shipping_address?.province || "",
-    postal_code: isPickup
-      ? pickupAddress.postal_code
-      : address?.postal_code || cart.shipping_address?.postal_code || "10101",
-    country_code: isPickup ? pickupAddress.country_code : countryCode,
-  }
-
-  await updateCart({
-    shipping_address: shippingAddress,
-    billing_address: shippingAddress,
-    metadata: {
-      ...(cart.metadata || {}),
-      is_pickup: isPickup,
-      lat: resolvedLocation.lat,
-      lng: resolvedLocation.lng,
-    },
-  } as HttpTypes.StoreUpdateCart)
-
-  return { ok: true }
 }
 
 export async function initiatePaymentSession(
