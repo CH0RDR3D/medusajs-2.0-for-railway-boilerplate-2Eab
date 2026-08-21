@@ -180,7 +180,7 @@ export default function LencoButton({ cart }: { cart: HttpTypes.StoreCart }) {
     setSubmitting(true)
     setError(null)
 
-    const amount = (cart.total || 0) / 100
+    const amount = cart.total || 0
     let currency = (cart.currency_code || "ZMW").toUpperCase()
     if (currency === "ZMK") {
       currency = "ZMW"
