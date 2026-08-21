@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from "react"
 import { HttpTypes } from "@medusajs/types"
-import { placeOrder } from "../../../lib/data/cart"
+import { placeOrder, initiatePaymentSession } from "../../../lib/data/cart"
 import Spinner from "../../common/icons/spinner"
 
 declare global {
@@ -236,6 +236,7 @@ export default function LencoButton({ cart }: { cart: HttpTypes.StoreCart }) {
             console.log("[Lenco] Payment verified successfully — placing order.")
             // Reset singleton before navigating away so future visits start fresh
             resetLencoPay()
+            await initiatePaymentSession(cart, { provider_id: "pp_system_default" })
             await placeOrder()
           } else {
             console.error("[Lenco] Verification did not return a successful status.", verifyData)
@@ -267,15 +268,18 @@ export default function LencoButton({ cart }: { cart: HttpTypes.StoreCart }) {
         setScriptReady(false)
         startPolling(5000)
       },
-      onConfirmationPending: () => {
+      onConfirmationPending: async () => {
         console.log("[Lenco] onConfirmationPending — placing order optimistically for mobile money.")
         // Mobile money payments may be pending — place order optimistically,
         // the webhook will update the status server-side
-        placeOrder().catch((err: any) => {
+        try {
+          await initiatePaymentSession(cart, { provider_id: "pp_system_default" })
+          await placeOrder()
+        } catch (err: any) {
           console.error("[Lenco] placeOrder failed after confirmation pending:", err)
           setError(err.message)
           setSubmitting(false)
-        })
+        }
       },
     })
   }

@@ -82,6 +82,20 @@ const Shipping: React.FC<ShippingProps> = ({
         setError(err.message)
       })
 
+      // Automatically assign the first available shipping method (prioritizing free/pickup options)
+      if (availableShippingMethods && availableShippingMethods.length > 0) {
+        const pickupOption = availableShippingMethods.find(
+          (o) =>
+            o.name?.toLowerCase().includes("pickup") ||
+            o.name?.toLowerCase().includes("pick up") ||
+            o.amount === 0
+        ) || availableShippingMethods[0]
+
+        await set(pickupOption.id).catch((err) => {
+          console.error("Failed to auto-set pickup shipping method:", err)
+        })
+      }
+
       setIsSavingMode(false)
       return
     }
