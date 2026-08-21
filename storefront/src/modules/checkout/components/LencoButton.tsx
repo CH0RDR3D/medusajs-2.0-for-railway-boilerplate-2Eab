@@ -181,7 +181,10 @@ export default function LencoButton({ cart }: { cart: HttpTypes.StoreCart }) {
     setError(null)
 
     const amount = (cart.total || 0) / 100
-    const currency = (cart.currency_code || "ZMW").toUpperCase()
+    let currency = (cart.currency_code || "ZMW").toUpperCase()
+    if (currency === "ZMK") {
+      currency = "ZMW"
+    }
     const email = cart.email || `guest-${cart.id}@example.com`
     const firstName = cart.shipping_address?.first_name || ""
     const lastName = cart.shipping_address?.last_name || ""
