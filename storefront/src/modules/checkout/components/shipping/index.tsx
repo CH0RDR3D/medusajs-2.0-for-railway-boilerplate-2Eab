@@ -270,12 +270,15 @@ const Shipping: React.FC<ShippingProps> = ({
                         <Radio checked={option.id === selectedShippingMethod?.id} />
                         <span className="text-base-regular">{option.name}</span>
                       </div>
-                      <span className="justify-self-end text-ui-fg-base">
-                        {convertToLocale({
-                          amount: option.amount!,
-                          currency_code: cart?.currency_code,
-                        })}
-                      </span>
+                      {/* Show price only during active delivery step to defer pricing */}
+                      {isOpen && (
+                        <span className="justify-self-end text-ui-fg-base">
+                          {convertToLocale({
+                            amount: option.amount!,
+                            currency_code: cart?.currency_code,
+                          })}
+                        </span>
+                      )}
                     </RadioGroup.Option>
                   )
                 })}
@@ -318,11 +321,17 @@ const Shipping: React.FC<ShippingProps> = ({
                   Method
                 </Text>
                 <Text className="txt-medium text-ui-fg-subtle">
-                  {selectedShippingMethod?.name}{" "}
-                  {convertToLocale({
-                    amount: selectedShippingMethod?.amount!,
-                    currency_code: cart?.currency_code,
-                  })}
+                  {selectedShippingMethod?.name}
+                  {/* Show price in summary only after delivery step is complete */}
+                  {deliveryStepCompleted && (
+                    <>
+                      {" "}
+                      {convertToLocale({
+                        amount: selectedShippingMethod?.amount!,
+                        currency_code: cart?.currency_code,
+                      })}
+                    </>
+                  )}
                 </Text>
               </div>
             )}

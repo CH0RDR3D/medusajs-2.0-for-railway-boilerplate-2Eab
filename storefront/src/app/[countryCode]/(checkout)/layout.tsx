@@ -1,6 +1,7 @@
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
 import ChevronDown from "@modules/common/icons/chevron-down"
 import MedusaCTA from "@modules/layout/components/medusa-cta"
+import CheckoutErrorBoundary from "@modules/checkout/components/checkout-error-boundary"
 
 export default function CheckoutLayout({
   children,
@@ -34,7 +35,28 @@ export default function CheckoutLayout({
           <div className="flex-1 basis-0 flex justify-end" />
         </nav>
       </div>
-      <div className="relative" data-testid="checkout-container">{children}</div>
+      <CheckoutErrorBoundary
+        fallback={
+          <div className="flex items-center justify-center min-h-screen">
+            <div className="text-center">
+              <h2 className="text-2xl font-semibold text-red-800 mb-2">
+                Checkout Error
+              </h2>
+              <p className="text-red-700 mb-4">
+                An unexpected error occurred. Please try refreshing the page or returning to your cart.
+              </p>
+              <LocalizedClientLink
+                href="/cart"
+                className="text-blue-600 hover:underline"
+              >
+                Return to Cart
+              </LocalizedClientLink>
+            </div>
+          </div>
+        }
+      >
+        <div className="relative" data-testid="checkout-container">{children}</div>
+      </CheckoutErrorBoundary>
       <div className="py-4 w-full flex items-center justify-center">
         <MedusaCTA />
       </div>

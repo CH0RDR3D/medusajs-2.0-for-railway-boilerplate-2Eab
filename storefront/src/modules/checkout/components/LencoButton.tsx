@@ -167,9 +167,10 @@ export default function LencoButton({ cart }: { cart: HttpTypes.StoreCart }) {
     }
   }, [])
 
-  const handlePayment = () => {
+  const handlePayment = async () => {
+    // Ensure widget is clean before opening
     if (!window.LencoPay) {
-      console.error("[Lenco] handlePayment called but window.LencoPay is not ready.")
+      console.warn("[Lenco] handlePayment called but window.LencoPay is not ready.")
       setError("Initializing payment widget. Please tap again in a moment.")
       setScriptReady(false)
       setLoadError(null)
@@ -177,8 +178,27 @@ export default function LencoButton({ cart }: { cart: HttpTypes.StoreCart }) {
       return
     }
 
+    // Reset state on new payment attempt
     setSubmitting(true)
     setError(null)
+    resetLencoPay() // Ensure clean state before new payment
+    
+    // Re-inject script to get fresh instance
+    setTimeout(() => {
+      if (!window.LencoPay) {
+        injectLencoScript()
+      }
+      performPayment()
+    }, 100)
+  }
+
+  const performPayment = () => {
+    if (!window.LencoPay) {
+      console.error("[Lenco] performPayment called but window.LencoPay is still not ready.")
+      setError("Payment widget failed to initialize. Please refresh and try again.")
+      setSubmitting(false)
+      return
+    }
 
     const amount = cart.total || 0
     let currency = (cart.currency_code || "ZMW").toUpperCase()
@@ -273,7 +293,12 @@ export default function LencoButton({ cart }: { cart: HttpTypes.StoreCart }) {
         // the SDK's internal n.instance guard blocks re-entry.
         resetLencoPay()
         setScriptReady(false)
-        startPolling(5000)
+        // Only restart polling if still needed
+        setTimeout(() => {
+          if (!window.LencoPay) {
+            startPolling(5000)
+          }
+        }, 200)
       },
       onConfirmationPending: async () => {
         console.log("[Lenco] onConfirmationPending — placing order optimistically for mobile money.")
@@ -293,7 +318,20 @@ export default function LencoButton({ cart }: { cart: HttpTypes.StoreCart }) {
           console.error("[Lenco] placeOrder failed after confirmation pending:", err)
           setError(err.message)
           setSubmitting(false)
+          // Reset for retry
+          resetLencoPay()
+          setScriptReady(false)
+          startPolling(5000)
         }
+      },
+      onError: (error: any) => {
+        // Handle Lenco SDK errors
+        console.error("[Lenco] onError callback fired:", error)
+        setError("Payment processing failed: " + (error?.message || "Unknown error"))
+        setSubmitting(false)
+        resetLencoPay()
+        setScriptReady(false)
+        startPolling(5000)
       },
     })
   }
