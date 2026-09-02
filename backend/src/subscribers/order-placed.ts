@@ -47,7 +47,7 @@ export default async function orderPlacedHandler({
         const phoneNumber = order.shipping_address.phone.replace(/\D/g, '')
         
         // SMS message with order summary
-        const smsMessage = `Hi ${order.shipping_address.first_name}, your order #${order.display_id || order.id.substring(0, 8)} has been confirmed! Total: ${(order.summary?.total || 0) / 100} ZMW. Track it at [store-url].`
+        const smsMessage = `Hi ${order.shipping_address.first_name}, your order #${order.display_id || order.id.substring(0, 8)} has been confirmed! Total: ${Number(order.summary?.current_order_total ?? 0) / 100} ZMW. Track it at [store-url].`
         
         await notificationModuleService.createNotifications({
           to: phoneNumber,
@@ -56,7 +56,7 @@ export default async function orderPlacedHandler({
           data: {
             orderNumber: order.display_id || order.id.substring(0, 8),
             customerName: order.shipping_address.first_name,
-            orderTotal: (order.summary?.total || 0) / 100,
+            orderTotal: Number(order.summary?.current_order_total ?? 0) / 100,
             currency: order.currency_code || 'ZMW',
             storeUrl: process.env.STOREFRONT_URL || 'store.com'
           }
