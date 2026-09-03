@@ -10,6 +10,7 @@ import ErrorMessage from "@modules/checkout/components/error-message"
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
 import { useEffect, useState } from "react"
 import { setDeliveryDetails, setShippingMethod } from "@lib/data/cart"
+import { listCartShippingMethods } from "@lib/data/fulfillment"
 import { convertToLocale } from "@lib/util/money"
 import { HttpTypes } from "@medusajs/types"
 import LocationMap from "../location-map"
@@ -48,11 +49,19 @@ const Shipping: React.FC<ShippingProps> = ({
   const hasShippingMethod = (cart.shipping_methods?.length ?? 0) > 0
   const deliveryStepCompleted = isPickup || hasShippingMethod
 
-  const isPickupOption = (o: HttpTypes.StoreCartShippingOption) =>
-    Boolean(
+  const isPickupOption = (o: HttpTypes.StoreCartShippingOption) => {
+    // Medusa tags shipping option types with a structured "code" (e.g. "pickup"/"delivery") -
+    // prefer that over guessing from the display name, which varies per store.
+    const typeCode = (o as any).type?.code
+    if (typeCode) {
+      return typeCode === "pickup"
+    }
+    return Boolean(
       o.name?.toLowerCase().includes("pickup") ||
-      o.name?.toLowerCase().includes("pick up")
+      o.name?.toLowerCase().includes("pick up") ||
+      o.name?.toLowerCase().includes("pick-up")
     )
+  }
 
   // Only offer options matching the currently selected delivery mode so a
   // previously-applied pickup/delivery method never shows up as pre-selected in the wrong list.
@@ -105,7 +114,13 @@ const Shipping: React.FC<ShippingProps> = ({
 
       // Only auto-assign when a genuine pickup option exists; never silently fall back
       // to an arbitrary (possibly paid) option just because none matched.
-      const pickupOption = availableShippingMethods?.find(isPickupOption)
+      let pickupOption = availableShippingMethods?.find(isPickupOption)
+      if (!pickupOption) {
+        // The server-rendered props may be stale/cached; re-fetch live before giving up.
+        const freshOptions = await listCartShippingMethods(cart.id, true)
+        pickupOption = freshOptions?.find(isPickupOption)
+      }
+
       if (pickupOption) {
         const setRes = await setShippingMethod({ cartId: cart.id, shippingMethodId: pickupOption.id })
         if (setRes && "error" in setRes && setRes.error) {
