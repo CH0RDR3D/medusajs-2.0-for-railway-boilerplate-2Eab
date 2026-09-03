@@ -8,7 +8,7 @@ import Divider from "@modules/common/components/divider"
 import Radio from "@modules/common/components/radio"
 import ErrorMessage from "@modules/checkout/components/error-message"
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { setDeliveryDetails, setShippingMethod } from "@lib/data/cart"
 import { listCartShippingMethods } from "@lib/data/fulfillment"
 import { convertToLocale } from "@lib/util/money"
@@ -140,7 +140,7 @@ const Shipping: React.FC<ShippingProps> = ({
     setLocationConfirmed(hasConfirmedLocation)
   }
 
-  const onResolveLocation = async (
+  const onResolveLocation = useCallback(async (
     location: { lat: number; lng: number },
     address: {
       address_1: string
@@ -177,7 +177,7 @@ const Shipping: React.FC<ShippingProps> = ({
     }
 
     setIsSavingMode(false)
-  }
+  }, [])
 
   const submitManualAddress = async () => {
     if (!manualAddress.address_1 || !manualAddress.city) {
@@ -361,7 +361,8 @@ const Shipping: React.FC<ShippingProps> = ({
 
           {deliveryMethod === "delivery" && (
             <div className="pb-8">
-              <RadioGroup value={selectedShippingMethod?.id} onChange={set}>
+              {/* Use "" (never undefined) so the RadioGroup stays controlled from first render. */}
+              <RadioGroup value={selectedShippingMethod?.id ?? ""} onChange={set}>
                 {modeShippingMethods?.map((option) => {
                   return (
                     <RadioGroup.Option

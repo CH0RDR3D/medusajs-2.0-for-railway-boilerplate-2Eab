@@ -13,24 +13,14 @@ declare global {
 
 const LENCO_SCRIPT_ID = "lenco-inline-script"
 
-/**
- * The Lenco SDK keeps an internal singleton (n.instance) that is never cleared
- * between calls unless the widget is cleanly closed. If getPaid() is called a
- * second time while n.instance is still set, the SDK silently ignores the call.
- *
- * resetLencoPay() forces a fresh instance by:
- *  1. Removing the existing script tag so the module re-executes on next load.
- *  2. Deleting window.LencoPay so our polling logic re-initialises the ref.
- */
-function resetLencoPay() {
-  const existing = document.getElementById(LENCO_SCRIPT_ID)
-  if (existing) existing.remove()
-  // Also clear any matching src-based script (injected by Next.js <Script>)
-  const byUrl = document.querySelector(`script[src*="lenco.co/js/"]`)
-  if (byUrl) byUrl.remove()
-  // @ts-ignore — intentionally clearing the singleton
-  window.LencoPay = undefined
-  console.log("[Lenco] Payment widget singleton reset.")
+// Per Lenco's docs (https://lenco-api.readme.io/v2.0/reference/accept-payments), the widget
+// script is loaded once and LencoPay.getPaid() is called directly for each payment attempt
+// with a fresh reference — no script reset/reinjection between calls is documented or needed.
+
+// Only used to recover from a genuinely failed script load (network error), not between payments.
+function removeFailedLencoScript() {
+  document.getElementById(LENCO_SCRIPT_ID)?.remove()
+  document.querySelector(`script[src*="lenco.co/js/"]`)?.remove()
 }
 
 export default function LencoButton({ cart }: { cart: HttpTypes.StoreCart }) {
@@ -187,7 +177,6 @@ export default function LencoButton({ cart }: { cart: HttpTypes.StoreCart }) {
   }, [])
 
   const handlePayment = async () => {
-    // Ensure widget is clean before opening
     if (!window.LencoPay) {
       console.warn("[Lenco] handlePayment called but window.LencoPay is not ready.")
       setError("Initializing payment widget. Please tap again in a moment.")
@@ -197,18 +186,9 @@ export default function LencoButton({ cart }: { cart: HttpTypes.StoreCart }) {
       return
     }
 
-    // Reset state on new payment attempt
     setSubmitting(true)
     setError(null)
-    resetLencoPay() // Ensure clean state before new payment
-    
-    // Re-inject script to get fresh instance
-    setTimeout(() => {
-      if (!window.LencoPay) {
-        injectLencoScript()
-      }
-      performPayment()
-    }, 100)
+    performPayment()
   }
 
   const performPayment = () => {
@@ -273,8 +253,6 @@ export default function LencoButton({ cart }: { cart: HttpTypes.StoreCart }) {
 
           if (isSuccess) {
             console.log("[Lenco] Payment verified successfully — placing order.")
-            // Reset singleton before navigating away so future visits start fresh
-            resetLencoPay()
             await initiatePaymentSession(cart, { provider_id: "pp_system_default" })
             await placeOrder()
           } else {
@@ -283,10 +261,6 @@ export default function LencoButton({ cart }: { cart: HttpTypes.StoreCart }) {
               "Payment verification failed. Please try again or contact support."
             )
             setSubmitting(false)
-            // Reset so user can retry
-            resetLencoPay()
-            setScriptReady(false)
-            startPolling(5000)
           }
         } catch (err: any) {
           if (
@@ -299,25 +273,11 @@ export default function LencoButton({ cart }: { cart: HttpTypes.StoreCart }) {
           console.error("[Lenco] Error during verification fetch:", err)
           setError("Error verifying payment: " + err.message)
           setSubmitting(false)
-          resetLencoPay()
-          setScriptReady(false)
-          startPolling(5000)
         }
       },
       onClose: () => {
         console.log("[Lenco] Widget closed by user.")
         setSubmitting(false)
-        // IMPORTANT: Reset the singleton so the next click opens a fresh widget.
-        // Without this, getPaid() is silently ignored on the second call because
-        // the SDK's internal n.instance guard blocks re-entry.
-        resetLencoPay()
-        setScriptReady(false)
-        // Only restart polling if still needed
-        setTimeout(() => {
-          if (!window.LencoPay) {
-            startPolling(5000)
-          }
-        }, 200)
       },
       onConfirmationPending: async () => {
         console.log("[Lenco] onConfirmationPending — placing order optimistically for mobile money.")
@@ -337,10 +297,6 @@ export default function LencoButton({ cart }: { cart: HttpTypes.StoreCart }) {
           console.error("[Lenco] placeOrder failed after confirmation pending:", err)
           setError(err.message)
           setSubmitting(false)
-          // Reset for retry
-          resetLencoPay()
-          setScriptReady(false)
-          startPolling(5000)
         }
       },
       onError: (error: any) => {
@@ -348,9 +304,6 @@ export default function LencoButton({ cart }: { cart: HttpTypes.StoreCart }) {
         console.error("[Lenco] onError callback fired:", error)
         setError("Payment processing failed: " + (error?.message || "Unknown error"))
         setSubmitting(false)
-        resetLencoPay()
-        setScriptReady(false)
-        startPolling(5000)
       },
     })
   }
@@ -369,7 +322,7 @@ export default function LencoButton({ cart }: { cart: HttpTypes.StoreCart }) {
           onClick={() => {
             setLoadError(null)
             setScriptReady(false)
-            resetLencoPay()
+            removeFailedLencoScript()
             startPolling(5000)
           }}
           className="text-sm text-blue-600 hover:underline"

@@ -68,6 +68,9 @@ const LocationMap = ({ apiKey, location, onResolveLocation, onError }: LocationM
   const mapRef = useRef<any>(null)
   const markerRef = useRef<any>(null)
   const geocoderRef = useRef<any>(null)
+  // Coordinates the geocoder couldn't process yet (e.g. device geolocation resolved before the
+  // Maps script finished loading) — retried automatically once the map/geocoder is ready.
+  const pendingCoordsRef = useRef<Location | null>(null)
 
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -81,7 +84,8 @@ const LocationMap = ({ apiKey, location, onResolveLocation, onError }: LocationM
   const reverseGeocode = useCallback((coords: Location) => {
     const geocoder = geocoderRef.current
     if (!geocoder) {
-      setError("Map is not ready yet. Please wait a moment and try again, or enter your address manually below.")
+      // Map/geocoder hasn't finished initializing yet — retry automatically once it is.
+      pendingCoordsRef.current = coords
       return
     }
 
@@ -164,6 +168,16 @@ const LocationMap = ({ apiKey, location, onResolveLocation, onError }: LocationM
           }
           reverseGeocode(coords)
         })
+
+        // Device geolocation may have resolved before the map/geocoder finished loading — retry it now.
+        if (pendingCoordsRef.current) {
+          const coords = pendingCoordsRef.current
+          pendingCoordsRef.current = null
+          const latLng = new window.google.maps.LatLng(coords.lat, coords.lng)
+          markerRef.current.setPosition(latLng)
+          mapRef.current.panTo(latLng)
+          reverseGeocode(coords)
+        }
       } catch (err: any) {
         setError(err?.message || "Failed to initialize Google Maps")
       }
