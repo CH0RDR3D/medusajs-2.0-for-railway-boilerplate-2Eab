@@ -16,9 +16,11 @@ import CheckoutErrorBoundary from "@modules/checkout/components/checkout-error-b
 export default async function CheckoutForm({
   cart,
   customer,
+  step,
 }: {
   cart: HttpTypes.StoreCart | null
   customer: HttpTypes.StoreCustomer | null
+  step?: string
 }) {
   if (!cart) {
     return null
@@ -42,6 +44,7 @@ export default async function CheckoutForm({
               Unable to load address fields. Please refresh the page.
             </div>
           }
+          resetKeys={[step]}
         >
           <div>
             <Addresses cart={cart} customer={customer} />
@@ -54,6 +57,7 @@ export default async function CheckoutForm({
               Unable to load shipping options. Please refresh the page.
             </div>
           }
+          resetKeys={[step]}
         >
           <div>
             <Shipping cart={cart} availableShippingMethods={shippingMethods} />
@@ -66,6 +70,7 @@ export default async function CheckoutForm({
               Unable to load payment options. Please refresh the page.
             </div>
           }
+          resetKeys={[step]}
         >
           <div>
             <Payment cart={cart} availablePaymentMethods={[]} />

@@ -13,6 +13,7 @@ import { setDeliveryDetails, setShippingMethod } from "@lib/data/cart"
 import { convertToLocale } from "@lib/util/money"
 import { HttpTypes } from "@medusajs/types"
 import LocationMap from "../location-map"
+import Input from "@modules/common/components/input"
 
 type ShippingProps = {
   cart: HttpTypes.StoreCart
@@ -29,6 +30,13 @@ const Shipping: React.FC<ShippingProps> = ({
   const [isSavingMode, setIsSavingMode] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [locationConfirmed, setLocationConfirmed] = useState(false)
+  const [mapError, setMapError] = useState<string | null>(null)
+  const [manualAddress, setManualAddress] = useState({
+    address_1: "",
+    city: "",
+    province: "",
+    postal_code: "",
+  })
   const mapsKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY
 
   const searchParams = useSearchParams()
@@ -147,6 +155,24 @@ const Shipping: React.FC<ShippingProps> = ({
     setIsSavingMode(false)
   }
 
+  const submitManualAddress = async () => {
+    if (!manualAddress.address_1 || !manualAddress.city) {
+      setError("Please enter at least a street address and city")
+      return
+    }
+
+    // Fallback center used only when the map/geocoder is unavailable.
+    const fallbackLocation = { lat: -15.3875, lng: 28.3228 }
+    setError(null)
+    await onResolveLocation(fallbackLocation, {
+      address_1: manualAddress.address_1,
+      city: manualAddress.city,
+      province: manualAddress.province,
+      postalCode: manualAddress.postal_code,
+      countryCode: cart.region?.countries?.[0]?.iso_2 || "zm",
+    })
+  }
+
   useEffect(() => {
     setError(null)
   }, [isOpen])
@@ -242,11 +268,71 @@ const Shipping: React.FC<ShippingProps> = ({
               apiKey={mapsKey}
               location={deliveryLocation}
               onResolveLocation={onResolveLocation}
+              onError={setMapError}
             />
           ) : (
             <Text className="txt-medium text-ui-fg-subtle mb-6">
               Pickup selected. We will use store location details for this order.
             </Text>
+          )}
+
+          {deliveryMethod === "delivery" && mapError && !locationConfirmed && (
+            <div
+              className="mt-4 mb-6 rounded-lg border border-ui-border-base p-4"
+              data-testid="manual-address-fallback"
+            >
+              <Text className="txt-medium-plus text-ui-fg-base mb-3">
+                Map unavailable — enter your delivery address manually
+              </Text>
+              <div className="grid grid-cols-1 small:grid-cols-2 gap-4">
+                <Input
+                  label="Street address"
+                  name="manual_address_1"
+                  value={manualAddress.address_1}
+                  onChange={(e) =>
+                    setManualAddress((prev) => ({ ...prev, address_1: e.target.value }))
+                  }
+                  data-testid="manual-address-1-input"
+                />
+                <Input
+                  label="City"
+                  name="manual_city"
+                  value={manualAddress.city}
+                  onChange={(e) =>
+                    setManualAddress((prev) => ({ ...prev, city: e.target.value }))
+                  }
+                  data-testid="manual-city-input"
+                />
+                <Input
+                  label="Province/State"
+                  name="manual_province"
+                  value={manualAddress.province}
+                  onChange={(e) =>
+                    setManualAddress((prev) => ({ ...prev, province: e.target.value }))
+                  }
+                  data-testid="manual-province-input"
+                />
+                <Input
+                  label="Postal code"
+                  name="manual_postal_code"
+                  value={manualAddress.postal_code}
+                  onChange={(e) =>
+                    setManualAddress((prev) => ({ ...prev, postal_code: e.target.value }))
+                  }
+                  data-testid="manual-postal-code-input"
+                />
+              </div>
+              <Button
+                size="small"
+                variant="secondary"
+                className="mt-3"
+                onClick={submitManualAddress}
+                isLoading={isSavingMode}
+                data-testid="submit-manual-address-button"
+              >
+                Use this address
+              </Button>
+            </div>
           )}
 
           {deliveryMethod === "delivery" && (

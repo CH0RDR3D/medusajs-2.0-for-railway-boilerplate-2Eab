@@ -34,9 +34,11 @@ const ShippingAddress = ({
   // check if customer has saved addresses that are in the current region
   const addressesInRegion = useMemo(
     () =>
-      customer?.addresses.filter(
-        (a) => a.country_code && countriesInRegion?.includes(a.country_code)
-      ),
+      Array.isArray(customer?.addresses)
+        ? customer.addresses.filter(
+            (a) => a.country_code && countriesInRegion?.includes(a.country_code)
+          )
+        : [],
     [customer?.addresses, countriesInRegion]
   )
 
@@ -117,7 +119,7 @@ const ShippingAddress = ({
             {`Hi ${customer.first_name}, do you want to use one of your saved addresses?`}
           </p>
           <AddressSelect
-            addresses={customer.addresses}
+            addresses={Array.isArray(customer.addresses) ? customer.addresses : []}
             addressInput={mapKeys(formData, (_, key) =>
               key.replace("shipping_address.", "")
             ) as HttpTypes.StoreCartAddress}

@@ -20,12 +20,14 @@ type LocationMapProps = {
   apiKey?: string
   location: Location | null
   onResolveLocation: (location: Location, address: ResolvedAddress) => void
+  onError?: (message: string | null) => void
 }
 
 declare global {
   interface Window {
     google: any
     __googleMapsCheckoutScriptLoaded?: boolean
+    gm_authFailure?: () => void
   }
 }
 
@@ -61,7 +63,7 @@ const loadGoogleMaps = (apiKey: string): Promise<void> => {
   })
 }
 
-const LocationMap = ({ apiKey, location, onResolveLocation }: LocationMapProps) => {
+const LocationMap = ({ apiKey, location, onResolveLocation, onError }: LocationMapProps) => {
   const mapElementRef = useRef<HTMLDivElement | null>(null)
   const mapRef = useRef<any>(null)
   const markerRef = useRef<any>(null)
@@ -70,11 +72,16 @@ const LocationMap = ({ apiKey, location, onResolveLocation }: LocationMapProps) 
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  useEffect(() => {
+    onError?.(error)
+  }, [error, onError])
+
   const fallbackCenter = useMemo(() => ({ lat: -15.3875, lng: 28.3228 }), [])
 
   const reverseGeocode = useCallback((coords: Location) => {
     const geocoder = geocoderRef.current
     if (!geocoder) {
+      setError("Map is not ready yet. Please wait a moment and try again, or enter your address manually below.")
       return
     }
 
@@ -114,6 +121,16 @@ const LocationMap = ({ apiKey, location, onResolveLocation }: LocationMapProps) 
     }
 
     let disposed = false
+
+    // Google calls this global instead of throwing, which otherwise leaves
+    // users stuck behind its own "can't load Google Maps" overlay with no way forward.
+    window.gm_authFailure = () => {
+      if (!disposed) {
+        setError(
+          "Google Maps couldn't authenticate (invalid or restricted API key). Use 'Use my location' or enter your address manually below."
+        )
+      }
+    }
 
     const initializeMap = async () => {
       try {

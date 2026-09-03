@@ -7,6 +7,8 @@ interface ErrorBoundaryProps {
   children: ReactNode
   fallback?: ReactNode
   onReset?: () => void
+  /** When any value in this array changes, a previously caught error is cleared automatically. */
+  resetKeys?: unknown[]
 }
 
 interface ErrorBoundaryState {
@@ -34,6 +36,18 @@ export default class CheckoutErrorBoundary extends React.Component<
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     console.error("[Checkout Error]", error, errorInfo)
+  }
+
+  componentDidUpdate(prevProps: ErrorBoundaryProps) {
+    if (!this.state.hasError || !this.props.resetKeys) {
+      return
+    }
+
+    const prevKeys = prevProps.resetKeys || []
+    const changed = this.props.resetKeys.some((key, i) => key !== prevKeys[i])
+    if (changed) {
+      this.handleReset()
+    }
   }
 
   handleReset = () => {

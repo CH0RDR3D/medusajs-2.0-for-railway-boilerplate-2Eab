@@ -33,9 +33,14 @@ const fetchCart = async () => {
   return cart
 }
 
-export default async function Checkout() {
+export default async function Checkout({
+  searchParams,
+}: {
+  searchParams: Promise<{ step?: string }>
+}) {
   const cart = await fetchCart()
   const customer = await safeGetCustomer(() => getCustomer())
+  const { step } = await searchParams
 
   return (
     <div className="grid grid-cols-1 small:grid-cols-[1fr_416px] content-container gap-x-12 py-12">
@@ -51,7 +56,7 @@ export default async function Checkout() {
       >
         <Wrapper cart={cart}>
           <div className="rounded-2xl border border-[var(--surface-border)] bg-[var(--surface-card)] p-4 small:p-6">
-            <CheckoutForm cart={cart} customer={customer} />
+            <CheckoutForm cart={cart} customer={customer} step={step} />
           </div>
         </Wrapper>
       </CheckoutErrorBoundary>
