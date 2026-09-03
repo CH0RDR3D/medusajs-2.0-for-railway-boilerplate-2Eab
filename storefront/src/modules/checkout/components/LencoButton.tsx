@@ -40,6 +40,9 @@ export default function LencoButton({ cart }: { cart: HttpTypes.StoreCart }) {
     typeof window !== "undefined" && !!window.LencoPay
   )
   const [runtimePublicKey, setRuntimePublicKey] = useState<string>("")
+  // Gates script injection until the authoritative (server-side) key is known,
+  // so we never pick sandbox vs live script URL based on a stale build-time env var.
+  const [keyResolved, setKeyResolved] = useState(false)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
@@ -118,6 +121,11 @@ export default function LencoButton({ cart }: { cart: HttpTypes.StoreCart }) {
       return
     }
 
+    if (!keyResolved) {
+      // Wait for the runtime key lookup so we don't inject the wrong sandbox/live script.
+      return
+    }
+
     const src = getScriptSrc()
     // Check if script tag already exists in DOM
     const existing =
@@ -139,7 +147,7 @@ export default function LencoButton({ cart }: { cart: HttpTypes.StoreCart }) {
     return () => {
       stopPolling()
     }
-  }, [injectLencoScript, startPolling, stopPolling, getScriptSrc])
+  }, [injectLencoScript, startPolling, stopPolling, getScriptSrc, keyResolved])
 
   // Cleanup on unmount
   useEffect(() => {
@@ -148,8 +156,11 @@ export default function LencoButton({ cart }: { cart: HttpTypes.StoreCart }) {
 
   useEffect(() => {
     let mounted = true
+    // Guard against the config route hanging indefinitely and blocking script injection forever.
+    const controller = new AbortController()
+    const abortTimer = setTimeout(() => controller.abort(), 5000)
 
-    fetch("/api/lenco/config")
+    fetch("/api/lenco/config", { signal: controller.signal })
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (!mounted) return
@@ -161,9 +172,17 @@ export default function LencoButton({ cart }: { cart: HttpTypes.StoreCart }) {
       .catch(() => {
         // Keep silent: NEXT_PUBLIC_* env vars are still used as direct fallback.
       })
+      .finally(() => {
+        clearTimeout(abortTimer)
+        if (mounted) {
+          setKeyResolved(true)
+        }
+      })
 
     return () => {
       mounted = false
+      clearTimeout(abortTimer)
+      controller.abort()
     }
   }, [])
 

@@ -48,7 +48,19 @@ const Shipping: React.FC<ShippingProps> = ({
   const hasShippingMethod = (cart.shipping_methods?.length ?? 0) > 0
   const deliveryStepCompleted = isPickup || hasShippingMethod
 
-  const selectedShippingMethod = availableShippingMethods?.find(
+  const isPickupOption = (o: HttpTypes.StoreCartShippingOption) =>
+    Boolean(
+      o.name?.toLowerCase().includes("pickup") ||
+      o.name?.toLowerCase().includes("pick up")
+    )
+
+  // Only offer options matching the currently selected delivery mode so a
+  // previously-applied pickup/delivery method never shows up as pre-selected in the wrong list.
+  const modeShippingMethods = availableShippingMethods?.filter((o) =>
+    deliveryMethod === "pickup" ? isPickupOption(o) : !isPickupOption(o)
+  )
+
+  const selectedShippingMethod = modeShippingMethods?.find(
     // To do: remove the previously selected shipping method instead of using the last one
     (method) => method.id === cart.shipping_methods?.at(-1)?.shipping_option_id
   )
@@ -91,19 +103,16 @@ const Shipping: React.FC<ShippingProps> = ({
         return
       }
 
-      // Automatically assign the first available shipping method (prioritizing free/pickup options)
-      if (availableShippingMethods && availableShippingMethods.length > 0) {
-        const pickupOption = availableShippingMethods.find(
-          (o) =>
-            o.name?.toLowerCase().includes("pickup") ||
-            o.name?.toLowerCase().includes("pick up") ||
-            o.amount === 0
-        ) || availableShippingMethods[0]
-
+      // Only auto-assign when a genuine pickup option exists; never silently fall back
+      // to an arbitrary (possibly paid) option just because none matched.
+      const pickupOption = availableShippingMethods?.find(isPickupOption)
+      if (pickupOption) {
         const setRes = await setShippingMethod({ cartId: cart.id, shippingMethodId: pickupOption.id })
         if (setRes && "error" in setRes && setRes.error) {
           setError(setRes.error)
         }
+      } else {
+        setError("No store pickup option is configured. Please choose Delivery instead.")
       }
 
       setIsSavingMode(false)
@@ -338,7 +347,7 @@ const Shipping: React.FC<ShippingProps> = ({
           {deliveryMethod === "delivery" && (
             <div className="pb-8">
               <RadioGroup value={selectedShippingMethod?.id} onChange={set}>
-                {availableShippingMethods?.map((option) => {
+                {modeShippingMethods?.map((option) => {
                   return (
                     <RadioGroup.Option
                       key={option.id}
@@ -382,7 +391,7 @@ const Shipping: React.FC<ShippingProps> = ({
             className="mt-6"
             onClick={handleSubmit}
             isLoading={isLoading || isSavingMode}
-            disabled={!locationConfirmed || (deliveryMethod === "delivery" && !hasShippingMethod)}
+            disabled={!locationConfirmed || (deliveryMethod === "delivery" && !selectedShippingMethod)}
             data-testid="submit-delivery-option-button"
           >
             Continue to payment
