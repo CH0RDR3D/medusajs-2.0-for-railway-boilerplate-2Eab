@@ -439,10 +439,13 @@ export async function setShippingMethod({
 export async function setDeliveryDetails({
   isPickup,
   location,
+  deviceLocation,
   address,
 }: {
   isPickup: boolean
   location?: { lat: number; lng: number }
+  // Raw device GPS fix, kept for reference only — `location` (possibly adjusted by the user) is the delivery point.
+  deviceLocation?: { lat: number; lng: number }
   address?: {
     address_1?: string
     city?: string
@@ -514,6 +517,10 @@ export async function setDeliveryDetails({
         is_pickup: isPickup,
         lat: resolvedLocation.lat,
         lng: resolvedLocation.lng,
+        ...(deviceLocation && {
+          device_lat: deviceLocation.lat,
+          device_lng: deviceLocation.lng,
+        }),
       },
     } as HttpTypes.StoreUpdateCart)
 

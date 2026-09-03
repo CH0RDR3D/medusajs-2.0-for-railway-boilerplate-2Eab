@@ -19,7 +19,11 @@ type ResolvedAddress = {
 type LocationMapProps = {
   apiKey?: string
   location: Location | null
-  onResolveLocation: (location: Location, address: ResolvedAddress) => void
+  onResolveLocation: (
+    location: Location,
+    address: ResolvedAddress,
+    deviceLocation: Location | null
+  ) => void
   onError?: (message: string | null) => void
 }
 
@@ -74,6 +78,9 @@ const LocationMap = ({ apiKey, location, onResolveLocation, onError }: LocationM
 
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  // The raw device GPS fix, kept separate from the (possibly dragged) delivery point.
+  const [deviceLocation, setDeviceLocation] = useState<Location | null>(null)
+  const deviceLocationRef = useRef<Location | null>(null)
 
   useEffect(() => {
     onError?.(error)
@@ -81,7 +88,18 @@ const LocationMap = ({ apiKey, location, onResolveLocation, onError }: LocationM
 
   const fallbackCenter = useMemo(() => ({ lat: -15.3875, lng: 28.3228 }), [])
 
-  const reverseGeocode = useCallback((coords: Location) => {
+  // Pins the marker/pans the map immediately, independent of reverse-geocode completing.
+  const placeMarkerAt = useCallback((coords: Location) => {
+    if (!mapRef.current || !markerRef.current || !window.google?.maps) {
+      pendingCoordsRef.current = coords
+      return
+    }
+    const latLng = new window.google.maps.LatLng(coords.lat, coords.lng)
+    markerRef.current.setPosition(latLng)
+    mapRef.current.panTo(latLng)
+  }, [])
+
+  const reverseGeocode = useCallback((coords: Location, isRetry = false) => {
     const geocoder = geocoderRef.current
     if (!geocoder) {
       // Map/geocoder hasn't finished initializing yet — retry automatically once it is.
@@ -91,7 +109,25 @@ const LocationMap = ({ apiKey, location, onResolveLocation, onError }: LocationM
 
     geocoder.geocode({ location: coords }, (results: any[], status: string) => {
       if (status !== "OK" || !results?.length) {
-        setError("Unable to resolve a formatted address from this location")
+        // Reverse geocoding can transiently return ZERO_RESULTS/OVER_QUERY_LIMIT — retry once.
+        if (!isRetry) {
+          setTimeout(() => reverseGeocode(coords, true), 600)
+          return
+        }
+
+        // Still no address data for this exact pin (common for remote/undeveloped points) —
+        // don't block checkout on it. Use the pin's coordinates with placeholder address
+        // fields; the user can still drag the marker to a location with better address data.
+        setError(
+          "Couldn't find a street address for this exact pin. You can drag the marker to adjust it, or continue — we'll use the pinned location."
+        )
+        onResolveLocation(coords, {
+          address_1: "Pinned location",
+          city: "",
+          province: "",
+          postalCode: "",
+          countryCode: "",
+        }, deviceLocationRef.current)
         return
       }
 
@@ -108,13 +144,14 @@ const LocationMap = ({ apiKey, location, onResolveLocation, onError }: LocationM
       const route = getComponent("route")
       const addressLine1 = [streetNumber, route].filter(Boolean).join(" ") || top.formatted_address || ""
 
+      setError(null)
       onResolveLocation(coords, {
         address_1: addressLine1,
         city: getComponent("locality") || getComponent("postal_town") || getComponent("administrative_area_level_2"),
         province: getComponent("administrative_area_level_1"),
         postalCode: getComponent("postal_code"),
         countryCode: getComponentShort("country").toLowerCase(),
-      })
+      }, deviceLocationRef.current)
     })
   }, [onResolveLocation])
 
@@ -173,9 +210,7 @@ const LocationMap = ({ apiKey, location, onResolveLocation, onError }: LocationM
         if (pendingCoordsRef.current) {
           const coords = pendingCoordsRef.current
           pendingCoordsRef.current = null
-          const latLng = new window.google.maps.LatLng(coords.lat, coords.lng)
-          markerRef.current.setPosition(latLng)
-          mapRef.current.panTo(latLng)
+          placeMarkerAt(coords)
           reverseGeocode(coords)
         }
       } catch (err: any) {
@@ -216,6 +251,10 @@ const LocationMap = ({ apiKey, location, onResolveLocation, onError }: LocationM
           lng: position.coords.longitude,
         }
 
+        deviceLocationRef.current = coords
+        setDeviceLocation(coords)
+        // Pin the marker to the device fix immediately; reverse-geocoding the address happens in parallel.
+        placeMarkerAt(coords)
         reverseGeocode(coords)
         setLoading(false)
       },
@@ -225,7 +264,7 @@ const LocationMap = ({ apiKey, location, onResolveLocation, onError }: LocationM
       },
       { enableHighAccuracy: true, timeout: 15000 }
     )
-  }, [reverseGeocode])
+  }, [reverseGeocode, placeMarkerAt])
 
   useEffect(() => {
     if (!location) {

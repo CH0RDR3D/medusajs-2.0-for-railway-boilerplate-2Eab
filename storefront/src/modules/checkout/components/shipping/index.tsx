@@ -148,7 +148,8 @@ const Shipping: React.FC<ShippingProps> = ({
       province: string
       postalCode: string
       countryCode: string
-    }
+    },
+    deviceLocation: { lat: number; lng: number } | null
   ) => {
     setDeliveryLocation(location)
 
@@ -164,6 +165,7 @@ const Shipping: React.FC<ShippingProps> = ({
     const res = await setDeliveryDetails({
       isPickup: false,
       location,
+      deviceLocation: deviceLocation ?? undefined,
       address: {
         address_1: address.address_1,
         city: address.city,
@@ -194,7 +196,7 @@ const Shipping: React.FC<ShippingProps> = ({
       province: manualAddress.province,
       postalCode: manualAddress.postal_code,
       countryCode: cart.region?.countries?.[0]?.iso_2 || "zm",
-    })
+    }, null)
   }
 
   useEffect(() => {
