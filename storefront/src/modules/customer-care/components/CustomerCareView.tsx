@@ -82,9 +82,15 @@ const QUICK_TOPICS = [
   },
 ]
 
-export default function CustomerCareView({ data }: { data: CustomerServiceData }) {
+export default function CustomerCareView({
+  data,
+  initialCategory = "All",
+}: {
+  data: CustomerServiceData
+  initialCategory?: string
+}) {
   const [searchQuery, setSearchQuery] = useState("")
-  const [selectedCategory, setSelectedCategory] = useState<string>("All")
+  const [selectedCategory, setSelectedCategory] = useState<string>(initialCategory)
   const [openFaq, setOpenFaq] = useState<string | null>("faq-1")
 
   // Contact Form state
