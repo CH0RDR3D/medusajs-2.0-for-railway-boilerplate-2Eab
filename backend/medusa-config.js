@@ -44,9 +44,9 @@ const medusaConfig = {
     redisUrl: REDIS_URL,
     workerMode: WORKER_MODE,
     http: {
-      adminCors: process.env.NODE_ENV === 'production' ? ADMIN_CORS : '*',
-      authCors: process.env.NODE_ENV === 'production' ? AUTH_CORS : '*',
-      storeCors: process.env.NODE_ENV === 'production' ? STORE_CORS : '*',
+      adminCors: ADMIN_CORS || process.env.ADMIN_CORS || '*',
+      authCors: AUTH_CORS || process.env.AUTH_CORS || '*',
+      storeCors: STORE_CORS || process.env.STORE_CORS || process.env.STOREFRONT_URL || '*',
       jwtSecret: JWT_SECRET,
       cookieSecret: COOKIE_SECRET
     },

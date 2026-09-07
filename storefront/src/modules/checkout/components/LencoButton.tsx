@@ -237,19 +237,28 @@ export default function LencoButton({ cart }: { cart: HttpTypes.StoreCart }) {
       },
       onSuccess: async (response: any) => {
         console.log("[Lenco] onSuccess fired. Response:", response)
+        const effectiveRef =
+          response?.reference ||
+          response?.transaction_id ||
+          response?.id ||
+          reference
+
         try {
           const verifyRes = await fetch(
-            `/api/lenco/verify?reference=${response.reference}`
+            `/api/lenco/verify?reference=${encodeURIComponent(effectiveRef)}`
           )
           const verifyData = await verifyRes.json()
           console.log("[Lenco] Verify result:", verifyRes.status, verifyData)
 
           const isSuccess =
-            verifyRes.ok &&
-            (verifyData.status === "successful" ||
-              verifyData.data?.status === "successful" ||
-              verifyData.status === "settled" ||
-              verifyData.data?.status === "settled")
+            verifyData?.success === true ||
+            verifyData?.status === "successful" ||
+            verifyData?.data?.status === "successful" ||
+            verifyData?.status === "settled" ||
+            verifyData?.data?.status === "settled" ||
+            verifyData?.status === "completed" ||
+            verifyData?.data?.status === "completed" ||
+            (verifyRes.ok && response?.status === "successful")
 
           if (isSuccess) {
             console.log("[Lenco] Payment verified successfully — placing order.")
@@ -258,7 +267,8 @@ export default function LencoButton({ cart }: { cart: HttpTypes.StoreCart }) {
           } else {
             console.error("[Lenco] Verification did not return a successful status.", verifyData)
             setError(
-              "Payment verification failed. Please try again or contact support."
+              verifyData?.message ||
+                "Payment verification failed. Please try again or contact support."
             )
             setSubmitting(false)
           }
