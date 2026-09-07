@@ -244,6 +244,48 @@ export default async function seedDemoData({ container }: ExecArgs) {
   await createShippingOptionsWorkflow(container).run({
     input: [
       {
+        name: "Store Pickup",
+        price_type: "flat",
+        provider_id: "manual_manual",
+        service_zone_id: fulfillmentSet.service_zones[0].id,
+        shipping_profile_id: shippingProfile.id,
+        type: {
+          label: "Store Pickup",
+          description: "Collect directly from the shop.",
+          code: "pickup",
+        },
+        prices: [
+          {
+            currency_code: "usd",
+            amount: 0,
+          },
+          {
+            currency_code: "eur",
+            amount: 0,
+          },
+          {
+            currency_code: "zmw",
+            amount: 0,
+          },
+          {
+            region_id: region.id,
+            amount: 0,
+          },
+        ],
+        rules: [
+          {
+            attribute: "enabled_in_store",
+            value: "true",
+            operator: "eq",
+          },
+          {
+            attribute: "is_return",
+            value: "false",
+            operator: "eq",
+          },
+        ],
+      },
+      {
         name: "Standard Shipping",
         price_type: "flat",
         provider_id: "manual_manual",

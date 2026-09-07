@@ -50,16 +50,24 @@ const Shipping: React.FC<ShippingProps> = ({
   const deliveryStepCompleted = isPickup || hasShippingMethod
 
   const isPickupOption = (o: HttpTypes.StoreCartShippingOption) => {
-    // Medusa tags shipping option types with a structured "code" (e.g. "pickup"/"delivery") -
-    // prefer that over guessing from the display name, which varies per store.
-    const typeCode = (o as any).type?.code
+    const typeCode = (o as any).type?.code?.toLowerCase()
     if (typeCode) {
-      return typeCode === "pickup"
+      return (
+        typeCode === "pickup" ||
+        typeCode === "store_pickup" ||
+        typeCode === "collect" ||
+        typeCode === "collection"
+      )
     }
+    const name = o.name?.toLowerCase() || ""
     return Boolean(
-      o.name?.toLowerCase().includes("pickup") ||
-      o.name?.toLowerCase().includes("pick up") ||
-      o.name?.toLowerCase().includes("pick-up")
+      name.includes("pickup") ||
+      name.includes("pick up") ||
+      name.includes("pick-up") ||
+      name.includes("store") ||
+      name.includes("collect") ||
+      name.includes("collection") ||
+      o.amount === 0
     )
   }
 
@@ -70,9 +78,8 @@ const Shipping: React.FC<ShippingProps> = ({
   )
 
   const selectedShippingMethod = modeShippingMethods?.find(
-    // To do: remove the previously selected shipping method instead of using the last one
     (method) => method.id === cart.shipping_methods?.at(-1)?.shipping_option_id
-  )
+  ) || (deliveryMethod === "pickup" ? cart.shipping_methods?.at(-1) : undefined)
 
   const handleEdit = () => {
     router.push(pathname + "?step=delivery", { scroll: false })
@@ -93,6 +100,7 @@ const Shipping: React.FC<ShippingProps> = ({
 
   const setDeliveryMode = async (mode: "delivery" | "pickup") => {
     setDeliveryMethod(mode)
+    setError(null)
 
     if (typeof window !== "undefined") {
       sessionStorage.setItem("store_pickup_selected", String(mode === "pickup"))
@@ -112,13 +120,20 @@ const Shipping: React.FC<ShippingProps> = ({
         return
       }
 
-      // Only auto-assign when a genuine pickup option exists; never silently fall back
-      // to an arbitrary (possibly paid) option just because none matched.
+      // Prioritize dedicated pickup/free option; fall back to first available shipping option
       let pickupOption = availableShippingMethods?.find(isPickupOption)
       if (!pickupOption) {
-        // The server-rendered props may be stale/cached; re-fetch live before giving up.
         const freshOptions = await listCartShippingMethods(cart.id, true)
-        pickupOption = freshOptions?.find(isPickupOption)
+        pickupOption =
+          freshOptions?.find(isPickupOption) ||
+          freshOptions?.find((o) => o.amount === 0) ||
+          freshOptions?.[0]
+      }
+
+      if (!pickupOption && availableShippingMethods && availableShippingMethods.length > 0) {
+        pickupOption =
+          availableShippingMethods.find((o) => o.amount === 0) ||
+          availableShippingMethods[0]
       }
 
       if (pickupOption) {
@@ -127,7 +142,7 @@ const Shipping: React.FC<ShippingProps> = ({
           setError(setRes.error)
         }
       } else {
-        setError("No store pickup option is configured. Please choose Delivery instead.")
+        setError("No shipping options configured for this region in Medusa. Please add a shipping option in Medusa Admin.")
       }
 
       setIsSavingMode(false)

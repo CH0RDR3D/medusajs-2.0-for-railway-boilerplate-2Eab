@@ -28,6 +28,7 @@ import {
   MEILISEARCH_ADMIN_KEY
 } from 'lib/constants';
 
+
 loadEnv(process.env.NODE_ENV, process.cwd());
 
 const S3_REQUIRED_VARS = { S3_ACCESS_KEY_ID, S3_SECRET_ACCESS_KEY, S3_BUCKET, S3_FILE_URL };
@@ -156,7 +157,7 @@ const medusaConfig = {
     }] : [])
   ],
   plugins: [
-  ...(MEILISEARCH_HOST && MEILISEARCH_ADMIN_KEY ? [{
+    ...(MEILISEARCH_HOST && MEILISEARCH_ADMIN_KEY ? [{
       resolve: '@rokmohar/medusa-plugin-meilisearch',
       options: {
         config: {
