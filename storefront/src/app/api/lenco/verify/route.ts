@@ -101,11 +101,21 @@ export async function GET(request: Request) {
       })
     }
 
+    const message = (data?.message || "").toString()
+    const isIpWhitelistError = message.toLowerCase().includes("ip address is not whitelisted") || message.toLowerCase().includes("whitelist")
+
+    if (isIpWhitelistError) {
+      console.warn(
+        `[Lenco Verify] Lenco rejected API call because the server IP is not whitelisted. Please disable IP whitelisting or add your server IP in Lenco Dashboard -> Settings -> API & Webhooks.`
+      )
+    }
+
     return NextResponse.json(
       {
         success: false,
+        isIpWhitelistError,
         status: txStatus || "unverified",
-        message: data?.message || "Transaction status is not successful",
+        message: message || "Transaction status is not successful",
         data: txData,
       },
       { status: response.status >= 400 ? response.status : 400 }

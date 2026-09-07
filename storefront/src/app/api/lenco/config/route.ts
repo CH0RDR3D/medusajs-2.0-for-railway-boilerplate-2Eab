@@ -7,5 +7,15 @@ export async function GET() {
     process.env.LENCO_PUBLIC_KEY ||
     ""
 
-  return NextResponse.json({ publicKey })
+  const isSandbox =
+    process.env.NEXT_PUBLIC_LENCO_ENV === "sandbox" ||
+    process.env.LENCO_ENV === "sandbox" ||
+    (process.env.LENCO_BASE_URL || "").includes("sandbox") ||
+    publicKey.includes("test") ||
+    publicKey.includes("sandbox")
+
+  return NextResponse.json({
+    publicKey,
+    isSandbox,
+  })
 }
