@@ -72,89 +72,152 @@ const LocationMap = ({ apiKey, location, onResolveLocation, onError }: LocationM
   const mapRef = useRef<any>(null)
   const markerRef = useRef<any>(null)
   const geocoderRef = useRef<any>(null)
-  // Coordinates the geocoder couldn't process yet (e.g. device geolocation resolved before the
-  // Maps script finished loading) — retried automatically once the map/geocoder is ready.
-  const pendingCoordsRef = useRef<Location | null>(null)
 
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  // The raw device GPS fix, kept separate from the (possibly dragged) delivery point.
   const [deviceLocation, setDeviceLocation] = useState<Location | null>(null)
   const deviceLocationRef = useRef<Location | null>(null)
+  const locationRef = useRef<Location | null>(location)
+  locationRef.current = location
+
+  const fallbackCenter = useMemo(() => ({ lat: -15.3875, lng: 28.3228 }), [])
 
   useEffect(() => {
     onError?.(error)
   }, [error, onError])
 
-  const fallbackCenter = useMemo(() => ({ lat: -15.3875, lng: 28.3228 }), [])
+  // Reverse geocodes coordinates to structured address and notifies parent
+  const reverseGeocode = useCallback(
+    (coords: Location, deviceLocOverride?: Location | null) => {
+      const geocoder = geocoderRef.current
+      const currentDeviceLoc =
+        deviceLocOverride !== undefined ? deviceLocOverride : deviceLocationRef.current
 
-  // Pins the marker/pans the map immediately, independent of reverse-geocode completing.
-  const placeMarkerAt = useCallback((coords: Location) => {
-    if (!mapRef.current || !markerRef.current || !window.google?.maps) {
-      pendingCoordsRef.current = coords
-      return
-    }
-    const latLng = new window.google.maps.LatLng(coords.lat, coords.lng)
-    markerRef.current.setPosition(latLng)
-    mapRef.current.panTo(latLng)
-  }, [])
-
-  const reverseGeocode = useCallback((coords: Location, isRetry = false) => {
-    const geocoder = geocoderRef.current
-    if (!geocoder) {
-      // Map/geocoder hasn't finished initializing yet — retry automatically once it is.
-      pendingCoordsRef.current = coords
-      return
-    }
-
-    geocoder.geocode({ location: coords }, (results: any[], status: string) => {
-      if (status !== "OK" || !results?.length) {
-        // Reverse geocoding can transiently return ZERO_RESULTS/OVER_QUERY_LIMIT — retry once.
-        if (!isRetry) {
-          setTimeout(() => reverseGeocode(coords, true), 600)
-          return
-        }
-
-        // Still no address data for this exact pin (common for remote/undeveloped points) —
-        // don't block checkout on it. Use the pin's coordinates with placeholder address
-        // fields; the user can still drag the marker to a location with better address data.
-        setError(
-          "Couldn't find a street address for this exact pin. You can drag the marker to adjust it, or continue — we'll use the pinned location."
+      if (!geocoder) {
+        // If geocoder is not initialized yet, supply coordinate fallback
+        onResolveLocation(
+          coords,
+          {
+            address_1: "Pinned delivery location",
+            city: "Lusaka",
+            province: "Lusaka",
+            postalCode: "10101",
+            countryCode: "zm",
+          },
+          currentDeviceLoc
         )
-        onResolveLocation(coords, {
-          address_1: "Pinned location",
-          city: "",
-          province: "",
-          postalCode: "",
-          countryCode: "",
-        }, deviceLocationRef.current)
         return
       }
 
-      const top = results[0]
-      const getComponent = (type: string) => {
-        return top.address_components?.find((c: any) => c.types?.includes(type))?.long_name || ""
+      geocoder.geocode({ location: coords }, (results: any[], status: string) => {
+        if (status === "OK" && results && results.length > 0) {
+          const top = results[0]
+          const getComponent = (type: string) =>
+            top.address_components?.find((c: any) => c.types?.includes(type))?.long_name || ""
+          const getComponentShort = (type: string) =>
+            top.address_components?.find((c: any) => c.types?.includes(type))?.short_name || ""
+
+          const streetNumber = getComponent("street_number")
+          const route = getComponent("route")
+          const streetAddress = [streetNumber, route].filter(Boolean).join(" ")
+          const addressLine1 = streetAddress || top.formatted_address || "Pinned delivery location"
+
+          const city =
+            getComponent("locality") ||
+            getComponent("postal_town") ||
+            getComponent("sublocality") ||
+            getComponent("administrative_area_level_2") ||
+            "Lusaka"
+
+          const province = getComponent("administrative_area_level_1") || "Lusaka"
+          const postalCode = getComponent("postal_code") || "10101"
+          const countryCode = (getComponentShort("country") || "zm").toLowerCase()
+
+          setError(null)
+          onResolveLocation(
+            coords,
+            {
+              address_1: addressLine1,
+              city,
+              province,
+              postalCode,
+              countryCode,
+            },
+            currentDeviceLoc
+          )
+        } else {
+          // Graceful fallback for remote coordinates or reverse-geocoding edge cases
+          setError(null)
+          onResolveLocation(
+            coords,
+            {
+              address_1: `Delivery Pin (${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)})`,
+              city: "Lusaka",
+              province: "Lusaka",
+              postalCode: "10101",
+              countryCode: "zm",
+            },
+            currentDeviceLoc
+          )
+        }
+      })
+    },
+    [onResolveLocation]
+  )
+
+  // Promisified browser geolocation helper
+  const getDeviceLocation = useCallback((): Promise<Location> => {
+    return new Promise((resolve, reject) => {
+      if (!navigator.geolocation) {
+        reject(new Error("Geolocation not supported by browser"))
+        return
       }
 
-      const getComponentShort = (type: string) => {
-        return top.address_components?.find((c: any) => c.types?.includes(type))?.short_name || ""
-      }
-
-      const streetNumber = getComponent("street_number")
-      const route = getComponent("route")
-      const addressLine1 = [streetNumber, route].filter(Boolean).join(" ") || top.formatted_address || ""
-
-      setError(null)
-      onResolveLocation(coords, {
-        address_1: addressLine1,
-        city: getComponent("locality") || getComponent("postal_town") || getComponent("administrative_area_level_2"),
-        province: getComponent("administrative_area_level_1"),
-        postalCode: getComponent("postal_code"),
-        countryCode: getComponentShort("country").toLowerCase(),
-      }, deviceLocationRef.current)
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          resolve({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+          })
+        },
+        (err) => {
+          reject(err)
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 60000,
+        }
+      )
     })
-  }, [onResolveLocation])
+  }, [])
 
+  // Manual trigger to re-center on device GPS location
+  const useMyLocation = useCallback(async () => {
+    setLoading(true)
+    setError(null)
+
+    try {
+      const coords = await getDeviceLocation()
+      setDeviceLocation(coords)
+      deviceLocationRef.current = coords
+
+      if (mapRef.current && markerRef.current && window.google?.maps) {
+        const latLng = new window.google.maps.LatLng(coords.lat, coords.lng)
+        markerRef.current.setPosition(latLng)
+        mapRef.current.panTo(latLng)
+        mapRef.current.setZoom(16)
+      }
+
+      reverseGeocode(coords, coords)
+    } catch (err: any) {
+      setError("Unable to access your current location. Please check browser permissions or drag the pin.")
+    } finally {
+      setLoading(false)
+    }
+  }, [getDeviceLocation, reverseGeocode])
+
+  // Initialize Google Map, auto-request geolocation on mount, pin marker, and resolve address
   useEffect(() => {
     if (!apiKey) {
       setError("NEXT_PUBLIC_GOOGLE_MAPS_API_KEY is missing")
@@ -163,42 +226,68 @@ const LocationMap = ({ apiKey, location, onResolveLocation, onError }: LocationM
 
     let disposed = false
 
-    // Google calls this global instead of throwing, which otherwise leaves
-    // users stuck behind its own "can't load Google Maps" overlay with no way forward.
     window.gm_authFailure = () => {
       if (!disposed) {
         setError(
-          "Google Maps couldn't authenticate (invalid or restricted API key). Use 'Use my location' or enter your address manually below."
+          "Google Maps couldn't authenticate (invalid or restricted API key). Enter your address manually below."
         )
       }
     }
 
     const initializeMap = async () => {
       try {
-        await loadGoogleMaps(apiKey)
+        setLoading(true)
+
+        // Request geolocation and load Google Maps in parallel
+        const [deviceResult] = await Promise.allSettled([
+          getDeviceLocation(),
+          loadGoogleMaps(apiKey),
+        ])
 
         if (disposed || !mapElementRef.current || !window.google?.maps) {
           return
         }
 
-        mapRef.current = new window.google.maps.Map(mapElementRef.current, {
-          center: location ?? fallbackCenter,
+        let initialCenter: Location = fallbackCenter
+        let initialDeviceLoc: Location | null = null
+
+        if (locationRef.current) {
+          // Prioritize already saved delivery coordinates if returning to step
+          initialCenter = locationRef.current
+        } else if (deviceResult.status === "fulfilled" && deviceResult.value) {
+          // Auto-detected device location
+          initialCenter = deviceResult.value
+          initialDeviceLoc = deviceResult.value
+          setDeviceLocation(deviceResult.value)
+          deviceLocationRef.current = deviceResult.value
+        }
+
+        // Initialize Map
+        const map = new window.google.maps.Map(mapElementRef.current, {
+          center: initialCenter,
           zoom: 15,
           fullscreenControl: false,
           mapTypeControl: false,
           streetViewControl: false,
           gestureHandling: "greedy",
         })
+        mapRef.current = map
 
-        geocoderRef.current = new window.google.maps.Geocoder()
+        // Initialize Geocoder
+        const geocoder = new window.google.maps.Geocoder()
+        geocoderRef.current = geocoder
 
-        markerRef.current = new window.google.maps.Marker({
-          map: mapRef.current,
+        // Initialize Draggable Marker
+        const marker = new window.google.maps.Marker({
+          position: initialCenter,
+          map,
           draggable: true,
-          position: location ?? fallbackCenter,
+          animation: window.google.maps.Animation.DROP,
         })
+        markerRef.current = marker
 
-        markerRef.current.addListener("dragend", (event: any) => {
+        // Listen for drag end to update userSelectedLocation and re-run Geocoder
+        marker.addListener("dragend", (event: any) => {
           const coords = {
             lat: event.latLng.lat(),
             lng: event.latLng.lng(),
@@ -206,15 +295,20 @@ const LocationMap = ({ apiKey, location, onResolveLocation, onError }: LocationM
           reverseGeocode(coords)
         })
 
-        // Device geolocation may have resolved before the map/geocoder finished loading — retry it now.
-        if (pendingCoordsRef.current) {
-          const coords = pendingCoordsRef.current
-          pendingCoordsRef.current = null
-          placeMarkerAt(coords)
-          reverseGeocode(coords)
-        }
+        // Adjust map container rendering
+        window.google.maps.event.trigger(map, "resize")
+        map.setCenter(initialCenter)
+
+        // Resolve address on mount
+        reverseGeocode(initialCenter, initialDeviceLoc)
       } catch (err: any) {
-        setError(err?.message || "Failed to initialize Google Maps")
+        if (!disposed) {
+          setError(err?.message || "Failed to initialize Google Maps")
+        }
+      } finally {
+        if (!disposed) {
+          setLoading(false)
+        }
       }
     }
 
@@ -223,8 +317,9 @@ const LocationMap = ({ apiKey, location, onResolveLocation, onError }: LocationM
     return () => {
       disposed = true
     }
-  }, [apiKey, fallbackCenter, location, reverseGeocode])
+  }, [apiKey, fallbackCenter, getDeviceLocation, reverseGeocode])
 
+  // Sync external location changes (e.g. from parent/saved state)
   useEffect(() => {
     if (!location || !mapRef.current || !markerRef.current || !window.google?.maps) {
       return
@@ -234,43 +329,6 @@ const LocationMap = ({ apiKey, location, onResolveLocation, onError }: LocationM
     markerRef.current.setPosition(latLng)
     mapRef.current.panTo(latLng)
   }, [location])
-
-  const useMyLocation = useCallback(() => {
-    if (!navigator.geolocation) {
-      setError("Geolocation is not available in this browser")
-      return
-    }
-
-    setLoading(true)
-    setError(null)
-
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const coords = {
-          lat: position.coords.latitude,
-          lng: position.coords.longitude,
-        }
-
-        deviceLocationRef.current = coords
-        setDeviceLocation(coords)
-        // Pin the marker to the device fix immediately; reverse-geocoding the address happens in parallel.
-        placeMarkerAt(coords)
-        reverseGeocode(coords)
-        setLoading(false)
-      },
-      () => {
-        setError("Unable to access your current location")
-        setLoading(false)
-      },
-      { enableHighAccuracy: true, timeout: 15000 }
-    )
-  }, [reverseGeocode, placeMarkerAt])
-
-  useEffect(() => {
-    if (!location) {
-      useMyLocation()
-    }
-  }, [location, useMyLocation])
 
   return (
     <div className="mt-6 flex flex-col gap-3">
@@ -302,3 +360,4 @@ const LocationMap = ({ apiKey, location, onResolveLocation, onError }: LocationM
 }
 
 export default LocationMap
+
