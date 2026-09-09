@@ -8,6 +8,7 @@ import OnboardingCta from "@modules/order/components/onboarding-cta"
 import OrderDetails from "@modules/order/components/order-details"
 import ShippingDetails from "@modules/order/components/shipping-details"
 import PaymentDetails from "@modules/order/components/payment-details"
+import CheckoutStepIndicator from "@modules/checkout/components/step-indicator"
 import { HttpTypes } from "@medusajs/types"
 
 type OrderCompletedTemplateProps = {
@@ -21,11 +22,14 @@ export default async function OrderCompletedTemplate({
   const isOnboarding = cookieStore.get("_medusa_onboarding")?.value === "true"
 
   return (
-    <div className="py-6 min-h-[calc(100vh-64px)]">
-      <div className="content-container flex flex-col justify-center items-center gap-y-10 max-w-4xl h-full w-full">
+    <div className="py-8 min-h-[calc(100vh-64px)]">
+      <div className="content-container flex flex-col justify-center items-center gap-y-8 max-w-4xl h-full w-full">
+        {/* 4-Step Checkout Stepper - Confirmation Stage */}
+        <CheckoutStepIndicator isConfirmationPage={true} />
+
         {isOnboarding && <OnboardingCta orderId={order.id} />}
         <div
-          className="flex flex-col gap-4 max-w-4xl h-full bg-[var(--surface-card)] border border-[var(--surface-border)] rounded-2xl w-full py-10 px-4 small:px-8"
+          className="flex flex-col gap-4 max-w-4xl h-full bg-[var(--surface-card)] border border-[var(--surface-border)] rounded-2xl w-full py-10 px-4 small:px-8 shadow-sm"
           data-testid="order-complete-container"
         >
           <Heading

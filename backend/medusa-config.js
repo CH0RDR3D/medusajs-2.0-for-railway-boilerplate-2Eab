@@ -9,6 +9,9 @@ import {
   REDIS_URL,
   RESEND_API_KEY,
   RESEND_FROM_EMAIL,
+  TWILIO_AUTH_TOKEN,
+  TWILIO_ACCOUNT_SID,
+  TWILIO_FROM_NUMBER,
   SENDGRID_API_KEY,
   SENDGRID_FROM_EMAIL,
   SHOULD_DISABLE_ADMIN,
@@ -113,7 +116,7 @@ const medusaConfig = {
         }
       }
     }] : []),
-    ...(SENDGRID_API_KEY && SENDGRID_FROM_EMAIL || RESEND_API_KEY && RESEND_FROM_EMAIL ? [{
+    ...(SENDGRID_API_KEY && SENDGRID_FROM_EMAIL || RESEND_API_KEY && RESEND_FROM_EMAIL || TWILIO_AUTH_TOKEN ? [{
       key: Modules.NOTIFICATION,
       resolve: '@medusajs/notification',
       options: {
@@ -134,6 +137,16 @@ const medusaConfig = {
               channels: ['email'],
               api_key: RESEND_API_KEY,
               from: RESEND_FROM_EMAIL,
+            },
+          }] : []),
+          ...(TWILIO_AUTH_TOKEN ? [{
+            resolve: './src/modules/twilio-notifications',
+            id: 'twilio',
+            options: {
+              channels: ['sms'],
+              auth_token: TWILIO_AUTH_TOKEN,
+              account_sid: TWILIO_ACCOUNT_SID,
+              from_phone: TWILIO_FROM_NUMBER,
             },
           }] : []),
         ]

@@ -104,13 +104,20 @@ export const S3_FORCE_PATH_STYLE = parseBoolean(process.env.S3_FORCE_PATH_STYLE,
 export const S3_ACL: string | false = process.env.S3_ACL || false;
 
 /**
- * (optional) Resend API Key and from Email - do not set if using SendGrid
+ * Resend API Key and from Email
  */
 export const RESEND_API_KEY = process.env.RESEND_API_KEY;
-export const RESEND_FROM_EMAIL = process.env.RESEND_FROM_EMAIL || process.env.RESEND_FROM;
+export const RESEND_FROM_EMAIL = process.env.RESEND_FROM_EMAIL || process.env.RESEND_FROM || 'onboarding@resend.dev';
 
 /**
- * (optionl) SendGrid API Key and from Email - do not set if using Resend
+ * Twilio SMS Configuration
+ */
+export const TWILIO_AUTH_TOKEN = process.env.TWILIO_AUTH_TOKEN;
+export const TWILIO_ACCOUNT_SID = process.env.TWILIO_ACCOUNT_SID;
+export const TWILIO_FROM_NUMBER = process.env.TWILIO_FROM_NUMBER || process.env.TWILIO_PHONE_NUMBER;
+
+/**
+ * (optional) SendGrid API Key and from Email - do not set if using Resend
  */
 export const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY;
 export const SENDGRID_FROM_EMAIL = process.env.SENDGRID_FROM_EMAIL || process.env.SENDGRID_FROM;
