@@ -15,6 +15,7 @@ import {
 } from "./cookies"
 import { getRegion, retrieveRegion } from "./regions"
 import { getLocale } from "./locale-actions"
+import { retrieveCustomer } from "./customer"
 
 const getRegionCountryCodes = async (region: HttpTypes.StoreRegion) => {
   let countries = region.countries || []
@@ -644,8 +645,17 @@ export async function setAddresses(currentState: unknown, formData: FormData) {
 
     const regionCountries = await getRegionCountryCodes(cart.region)
 
-    const email = formData.get("email") as string
-    const emailWithFallback = email && email.trim() !== "" ? email : `guest-${cartId}@example.com`
+    const rawEmail = (formData.get("email") as string || "").trim()
+    let customerEmail: string | undefined
+    try {
+      const customer = await retrieveCustomer().catch(() => null)
+      customerEmail = customer?.email
+    } catch (_) {}
+
+    const emailWithFallback =
+      rawEmail && rawEmail !== ""
+        ? rawEmail
+        : customerEmail || `guest-${cartId}@example.com`
 
     const isPickup = formData.get("is_pickup") === "true"
 
