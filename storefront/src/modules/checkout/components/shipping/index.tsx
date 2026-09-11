@@ -419,16 +419,28 @@ const Shipping: React.FC<ShippingProps> = ({
             data-testid="delivery-option-error-message"
           />
 
-          <Button
-            size="large"
-            className="mt-6"
-            onClick={handleSubmit}
-            isLoading={isLoading || isSavingMode}
-            disabled={!locationConfirmed || (deliveryMethod === "delivery" && !selectedShippingMethod)}
-            data-testid="submit-delivery-option-button"
-          >
-            Continue to payment
-          </Button>
+          <div className="flex flex-col sm:flex-row items-center gap-3 mt-6">
+            <Button
+              type="button"
+              variant="secondary"
+              size="large"
+              className="w-full sm:w-auto"
+              onClick={() => router.push(pathname + "?step=address", { scroll: false })}
+              data-testid="back-to-address-button"
+            >
+              ← Back to Personal Details
+            </Button>
+            <Button
+              size="large"
+              className="w-full sm:flex-1"
+              onClick={handleSubmit}
+              isLoading={isLoading || isSavingMode}
+              disabled={!locationConfirmed || (deliveryMethod === "delivery" && !selectedShippingMethod)}
+              data-testid="submit-delivery-option-button"
+            >
+              Continue to payment
+            </Button>
+          </div>
         </div>
       ) : (
         <div>

@@ -12,10 +12,26 @@ import Modal from "@modules/common/components/modal"
 import { SubmitButton } from "@modules/checkout/components/submit-button"
 import { HttpTypes } from "@medusajs/types"
 import { addCustomerAddress } from "@lib/data/customer"
+import GoogleAddressAutocomplete, {
+  ValidatedAddress,
+} from "@modules/common/components/google-address-autocomplete"
 
 const AddAddress = ({ region }: { region: HttpTypes.StoreRegion }) => {
   const [successState, setSuccessState] = useState(false)
   const { state, open, close: closeModal } = useToggleState(false)
+
+  const [addressData, setAddressData] = useState({
+    first_name: "",
+    last_name: "",
+    company: "",
+    address_1: "",
+    address_2: "",
+    city: "",
+    postal_code: "",
+    province: "",
+    country_code: region?.countries?.[0]?.iso_2 || "zm",
+    phone: "",
+  })
 
   const [formState, formAction] = useActionState(addCustomerAddress, {
     success: false,
@@ -40,6 +56,18 @@ const AddAddress = ({ region }: { region: HttpTypes.StoreRegion }) => {
     }
   }, [formState])
 
+  const handleGoogleAddressSelect = (validAddress: ValidatedAddress) => {
+    setAddressData((prev) => ({
+      ...prev,
+      address_1: validAddress.address_1,
+      address_2: validAddress.address_2 || prev.address_2,
+      city: validAddress.city || prev.city,
+      province: validAddress.province || prev.province,
+      postal_code: validAddress.postal_code || prev.postal_code,
+      country_code: validAddress.country_code || prev.country_code,
+    }))
+  }
+
   return (
     <>
       <button
@@ -57,13 +85,17 @@ const AddAddress = ({ region }: { region: HttpTypes.StoreRegion }) => {
         </Modal.Title>
         <form action={formAction}>
           <Modal.Body>
-            <div className="flex flex-col gap-y-2">
+            <div className="flex flex-col gap-y-3">
               <div className="grid grid-cols-2 gap-x-2">
                 <Input
                   label="First name"
                   name="first_name"
                   required
                   autoComplete="given-name"
+                  value={addressData.first_name}
+                  onChange={(e) =>
+                    setAddressData((prev) => ({ ...prev, first_name: e.target.value }))
+                  }
                   data-testid="first-name-input"
                 />
                 <Input
@@ -71,6 +103,10 @@ const AddAddress = ({ region }: { region: HttpTypes.StoreRegion }) => {
                   name="last_name"
                   required
                   autoComplete="family-name"
+                  value={addressData.last_name}
+                  onChange={(e) =>
+                    setAddressData((prev) => ({ ...prev, last_name: e.target.value }))
+                  }
                   data-testid="last-name-input"
                 />
               </div>
@@ -78,19 +114,35 @@ const AddAddress = ({ region }: { region: HttpTypes.StoreRegion }) => {
                 label="Company"
                 name="company"
                 autoComplete="organization"
+                value={addressData.company}
+                onChange={(e) =>
+                  setAddressData((prev) => ({ ...prev, company: e.target.value }))
+                }
                 data-testid="company-input"
               />
-              <Input
-                label="Address"
+
+              {/* Google Maps Places Autocomplete & Geocoding input */}
+              <GoogleAddressAutocomplete
+                label="Street Address (Google Maps Validated)"
                 name="address_1"
+                value={addressData.address_1}
                 required
-                autoComplete="address-line1"
+                countryRestriction={region?.countries?.[0]?.iso_2}
+                onAddressSelect={handleGoogleAddressSelect}
+                onChange={(e) =>
+                  setAddressData((prev) => ({ ...prev, address_1: e.target.value }))
+                }
                 data-testid="address-1-input"
               />
+
               <Input
                 label="Apartment, suite, etc."
                 name="address_2"
                 autoComplete="address-line2"
+                value={addressData.address_2}
+                onChange={(e) =>
+                  setAddressData((prev) => ({ ...prev, address_2: e.target.value }))
+                }
                 data-testid="address-2-input"
               />
               <div className="grid grid-cols-[144px_1fr] gap-x-2">
@@ -99,6 +151,10 @@ const AddAddress = ({ region }: { region: HttpTypes.StoreRegion }) => {
                   name="postal_code"
                   required
                   autoComplete="postal-code"
+                  value={addressData.postal_code}
+                  onChange={(e) =>
+                    setAddressData((prev) => ({ ...prev, postal_code: e.target.value }))
+                  }
                   data-testid="postal-code-input"
                 />
                 <Input
@@ -106,6 +162,10 @@ const AddAddress = ({ region }: { region: HttpTypes.StoreRegion }) => {
                   name="city"
                   required
                   autoComplete="locality"
+                  value={addressData.city}
+                  onChange={(e) =>
+                    setAddressData((prev) => ({ ...prev, city: e.target.value }))
+                  }
                   data-testid="city-input"
                 />
               </div>
@@ -113,6 +173,10 @@ const AddAddress = ({ region }: { region: HttpTypes.StoreRegion }) => {
                 label="Province / State"
                 name="province"
                 autoComplete="address-level1"
+                value={addressData.province}
+                onChange={(e) =>
+                  setAddressData((prev) => ({ ...prev, province: e.target.value }))
+                }
                 data-testid="state-input"
               />
               <CountrySelect
@@ -120,12 +184,20 @@ const AddAddress = ({ region }: { region: HttpTypes.StoreRegion }) => {
                 name="country_code"
                 required
                 autoComplete="country"
+                value={addressData.country_code}
+                onChange={(e) =>
+                  setAddressData((prev) => ({ ...prev, country_code: e.target.value }))
+                }
                 data-testid="country-select"
               />
               <Input
                 label="Phone"
                 name="phone"
                 autoComplete="phone"
+                value={addressData.phone}
+                onChange={(e) =>
+                  setAddressData((prev) => ({ ...prev, phone: e.target.value }))
+                }
                 data-testid="phone-input"
               />
             </div>
@@ -159,3 +231,4 @@ const AddAddress = ({ region }: { region: HttpTypes.StoreRegion }) => {
 }
 
 export default AddAddress
+

@@ -16,6 +16,9 @@ import {
   deleteCustomerAddress,
   updateCustomerAddress,
 } from "@lib/data/customer"
+import GoogleAddressAutocomplete, {
+  ValidatedAddress,
+} from "@modules/common/components/google-address-autocomplete"
 
 type EditAddressProps = {
   region: HttpTypes.StoreRegion
@@ -31,6 +34,19 @@ const EditAddress: React.FC<EditAddressProps> = ({
   const [removing, setRemoving] = useState(false)
   const [successState, setSuccessState] = useState(false)
   const { state, open, close: closeModal } = useToggleState(false)
+
+  const [addressData, setAddressData] = useState({
+    first_name: address.first_name || "",
+    last_name: address.last_name || "",
+    company: address.company || "",
+    address_1: address.address_1 || "",
+    address_2: address.address_2 || "",
+    city: address.city || "",
+    postal_code: address.postal_code || "",
+    province: address.province || "",
+    country_code: address.country_code || region?.countries?.[0]?.iso_2 || "zm",
+    phone: address.phone || "",
+  })
 
   const [formState, formAction] = useActionState(updateCustomerAddress, {
     success: false,
@@ -54,6 +70,18 @@ const EditAddress: React.FC<EditAddressProps> = ({
       setSuccessState(true)
     }
   }, [formState])
+
+  const handleGoogleAddressSelect = (validAddress: ValidatedAddress) => {
+    setAddressData((prev) => ({
+      ...prev,
+      address_1: validAddress.address_1,
+      address_2: validAddress.address_2 || prev.address_2,
+      city: validAddress.city || prev.city,
+      province: validAddress.province || prev.province,
+      postal_code: validAddress.postal_code || prev.postal_code,
+      country_code: validAddress.country_code || prev.country_code,
+    }))
+  }
 
   const removeAddress = async () => {
     setRemoving(true)
@@ -128,14 +156,17 @@ const EditAddress: React.FC<EditAddressProps> = ({
         <form action={formAction}>
           <input type="hidden" name="addressId" value={address.id} />
           <Modal.Body>
-            <div className="grid grid-cols-1 gap-y-2">
+            <div className="grid grid-cols-1 gap-y-3">
               <div className="grid grid-cols-2 gap-x-2">
                 <Input
                   label="First name"
                   name="first_name"
                   required
                   autoComplete="given-name"
-                  defaultValue={address.first_name || undefined}
+                  value={addressData.first_name}
+                  onChange={(e) =>
+                    setAddressData((prev) => ({ ...prev, first_name: e.target.value }))
+                  }
                   data-testid="first-name-input"
                 />
                 <Input
@@ -143,7 +174,10 @@ const EditAddress: React.FC<EditAddressProps> = ({
                   name="last_name"
                   required
                   autoComplete="family-name"
-                  defaultValue={address.last_name || undefined}
+                  value={addressData.last_name}
+                  onChange={(e) =>
+                    setAddressData((prev) => ({ ...prev, last_name: e.target.value }))
+                  }
                   data-testid="last-name-input"
                 />
               </div>
@@ -151,22 +185,35 @@ const EditAddress: React.FC<EditAddressProps> = ({
                 label="Company"
                 name="company"
                 autoComplete="organization"
-                defaultValue={address.company || undefined}
+                value={addressData.company}
+                onChange={(e) =>
+                  setAddressData((prev) => ({ ...prev, company: e.target.value }))
+                }
                 data-testid="company-input"
               />
-              <Input
-                label="Address"
+
+              {/* Google Maps Places Autocomplete */}
+              <GoogleAddressAutocomplete
+                label="Street Address (Google Maps Validated)"
                 name="address_1"
+                value={addressData.address_1}
                 required
-                autoComplete="address-line1"
-                defaultValue={address.address_1 || undefined}
+                countryRestriction={region?.countries?.[0]?.iso_2}
+                onAddressSelect={handleGoogleAddressSelect}
+                onChange={(e) =>
+                  setAddressData((prev) => ({ ...prev, address_1: e.target.value }))
+                }
                 data-testid="address-1-input"
               />
+
               <Input
                 label="Apartment, suite, etc."
                 name="address_2"
                 autoComplete="address-line2"
-                defaultValue={address.address_2 || undefined}
+                value={addressData.address_2}
+                onChange={(e) =>
+                  setAddressData((prev) => ({ ...prev, address_2: e.target.value }))
+                }
                 data-testid="address-2-input"
               />
               <div className="grid grid-cols-[144px_1fr] gap-x-2">
@@ -175,7 +222,10 @@ const EditAddress: React.FC<EditAddressProps> = ({
                   name="postal_code"
                   required
                   autoComplete="postal-code"
-                  defaultValue={address.postal_code || undefined}
+                  value={addressData.postal_code}
+                  onChange={(e) =>
+                    setAddressData((prev) => ({ ...prev, postal_code: e.target.value }))
+                  }
                   data-testid="postal-code-input"
                 />
                 <Input
@@ -183,7 +233,10 @@ const EditAddress: React.FC<EditAddressProps> = ({
                   name="city"
                   required
                   autoComplete="locality"
-                  defaultValue={address.city || undefined}
+                  value={addressData.city}
+                  onChange={(e) =>
+                    setAddressData((prev) => ({ ...prev, city: e.target.value }))
+                  }
                   data-testid="city-input"
                 />
               </div>
@@ -191,7 +244,10 @@ const EditAddress: React.FC<EditAddressProps> = ({
                 label="Province / State"
                 name="province"
                 autoComplete="address-level1"
-                defaultValue={address.province || undefined}
+                value={addressData.province}
+                onChange={(e) =>
+                  setAddressData((prev) => ({ ...prev, province: e.target.value }))
+                }
                 data-testid="state-input"
               />
               <CountrySelect
@@ -199,14 +255,20 @@ const EditAddress: React.FC<EditAddressProps> = ({
                 region={region}
                 required
                 autoComplete="country"
-                defaultValue={address.country_code || undefined}
+                value={addressData.country_code}
+                onChange={(e) =>
+                  setAddressData((prev) => ({ ...prev, country_code: e.target.value }))
+                }
                 data-testid="country-select"
               />
               <Input
                 label="Phone"
                 name="phone"
                 autoComplete="phone"
-                defaultValue={address.phone || undefined}
+                value={addressData.phone}
+                onChange={(e) =>
+                  setAddressData((prev) => ({ ...prev, phone: e.target.value }))
+                }
                 data-testid="phone-input"
               />
             </div>
@@ -237,3 +299,4 @@ const EditAddress: React.FC<EditAddressProps> = ({
 }
 
 export default EditAddress
+

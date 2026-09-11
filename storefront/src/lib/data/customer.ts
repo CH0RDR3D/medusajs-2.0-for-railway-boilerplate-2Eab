@@ -28,16 +28,34 @@ export type CustomerAuthState =
 // Requests a verification email for the given customer. The request must be
 // authenticated with a token tied to the auth identity (the token returned by
 // register or by a login that requires verification).
-async function requestVerificationEmail(email: string, token: string) {
+async function requestVerificationEmail(
+  email: string,
+  token?: string,
+  metadata?: Record<string, any>
+) {
+  const headers = token ? { authorization: `Bearer ${token}` } : undefined
   await sdk.auth.verification.request(
     {
       entity_id: email,
       entity_type: "email",
+      metadata,
     },
-    {
-      authorization: `Bearer ${token}`,
-    }
+    headers
   )
+}
+
+export async function resendVerificationEmail(
+  email: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    await sdk.auth.verification.request({
+      entity_id: email,
+      entity_type: "email",
+    })
+    return { success: true }
+  } catch (error) {
+    return { success: false, error: String(error) }
+  }
 }
 
 export const retrieveCustomer =

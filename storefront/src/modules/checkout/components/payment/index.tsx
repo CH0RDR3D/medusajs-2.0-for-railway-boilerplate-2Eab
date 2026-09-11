@@ -130,20 +130,40 @@ const Payment = ({
                   </Text>
                 </div>
               </div>
-              <PaymentButton cart={cart} data-testid="submit-order-button" />
+              <div className="flex flex-col gap-3">
+                <PaymentButton cart={cart} data-testid="submit-order-button" />
+                <button
+                  type="button"
+                  onClick={() => router.push(pathname + "?step=delivery", { scroll: false })}
+                  className="text-xs text-amber-500 font-semibold hover:underline flex items-center justify-center gap-1 mt-2"
+                  data-testid="back-to-delivery-button"
+                >
+                  ← Change delivery method or location pin
+                </button>
+              </div>
             </div>
           )}
 
           {paidByGiftcard && (
-            <Button
-              size="large"
-              className="mt-6 w-full"
-              onClick={handlePlaceOrder}
-              isLoading={submitting}
-              data-testid="submit-order-button"
-            >
-              Place Order
-            </Button>
+            <div className="flex flex-col gap-3 mt-6">
+              <Button
+                size="large"
+                className="w-full"
+                onClick={handlePlaceOrder}
+                isLoading={submitting}
+                data-testid="submit-order-button"
+              >
+                Place Order
+              </Button>
+              <button
+                type="button"
+                onClick={() => router.push(pathname + "?step=delivery", { scroll: false })}
+                className="text-xs text-amber-500 font-semibold hover:underline flex items-center justify-center gap-1"
+                data-testid="back-to-delivery-button"
+              >
+                ← Change delivery method or location pin
+              </button>
+            </div>
           )}
         </div>
 
