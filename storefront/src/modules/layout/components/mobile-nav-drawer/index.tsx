@@ -1,7 +1,8 @@
 "use client"
 
 import React, { useState, useEffect } from "react"
-import { usePathname } from "next/navigation"
+import { createPortal } from "react-dom"
+import { usePathname, useParams, useRouter } from "next/navigation"
 import { HttpTypes } from "@medusajs/types"
 import { useMedusaAuth } from "@lib/hooks/use-medusa-auth"
 import LocalizedClientLink from "@modules/common/components/localized-client-link"
@@ -17,7 +18,6 @@ import {
   ShoppingBag,
   Flame,
   Star,
-  User,
   LogIn,
   UserPlus,
   HelpCircle,
@@ -42,12 +42,26 @@ export default function MobileNavDrawer({
   regions,
 }: MobileNavDrawerProps) {
   const [isOpen, setIsOpen] = useState(false)
+  const [mounted, setMounted] = useState(false)
   const [isCategoriesOpen, setIsCategoriesOpen] = useState(false)
   const [isCollectionsOpen, setIsCollectionsOpen] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
+
   const pathname = usePathname()
-  const { session, signOut, signInWithGoogle } = useMedusaAuth()
+  const params = useParams()
+  const router = useRouter()
+  const countryCode =
+    (params?.countryCode as string) ||
+    process.env.NEXT_PUBLIC_DEFAULT_REGION ||
+    "zm"
+
+  const { session, signOut } = useMedusaAuth()
   const countrySelectToggle = useToggleState()
+
+  // Track hydration mount state for React Portal
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   // Close drawer on route change
   useEffect(() => {
@@ -66,6 +80,21 @@ export default function MobileNavDrawer({
     }
   }, [isOpen])
 
+  // Handle Escape key to close drawer
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setIsOpen(false)
+      }
+    }
+    if (isOpen) {
+      window.addEventListener("keydown", handleKeyDown)
+    }
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown)
+    }
+  }, [isOpen])
+
   const topCategories = categories.filter((c) => !c.parent_category)
   const customerName =
     [customer?.first_name, customer?.last_name].filter(Boolean).join(" ") ||
@@ -77,35 +106,24 @@ export default function MobileNavDrawer({
     e.preventDefault()
     if (!searchQuery.trim()) return
     setIsOpen(false)
-    window.location.href = `/store?q=${encodeURIComponent(searchQuery.trim())}`
+    router.push(`/${countryCode}/store?q=${encodeURIComponent(searchQuery.trim())}`)
   }
 
-  return (
-    <div className="flex small:hidden items-center">
-      {/* ── Hamburger Trigger Button ── */}
-      <button
-        type="button"
-        onClick={() => setIsOpen(true)}
-        className="flex items-center justify-center w-11 h-11 -ml-2 rounded-lg text-[var(--text-primary)] hover:bg-black/5 dark:hover:bg-white/5 transition"
-        aria-label="Open mobile navigation menu"
-        aria-expanded={isOpen}
-        data-testid="mobile-menu-trigger"
-      >
-        <Menu className="w-5 h-5 text-amber-500" />
-      </button>
-
+  // Drawer Portal Markup
+  const drawerContent = (
+    <>
       {/* ── Backdrop Overlay ── */}
-      {isOpen && (
-        <div
-          onClick={() => setIsOpen(false)}
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 transition-opacity duration-300 animate-in fade-in"
-          aria-hidden="true"
-        />
-      )}
+      <div
+        onClick={() => setIsOpen(false)}
+        className={`fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] transition-opacity duration-300 ease-in-out ${
+          isOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+        }`}
+        aria-hidden="true"
+      />
 
       {/* ── Slide-in Drawer Panel ── */}
-      <div
-        className={`fixed top-0 left-0 bottom-0 w-[85vw] max-w-[340px] bg-[var(--surface-card)] border-r border-[var(--surface-border)] shadow-2xl z-50 flex flex-col justify-between transition-transform duration-300 ease-out transform ${
+      <aside
+        className={`fixed top-0 bottom-0 left-0 z-[101] w-[85vw] max-w-[340px] h-[100dvh] max-h-[100dvh] bg-[var(--surface-card)] border-r border-[var(--surface-border)] shadow-2xl flex flex-col justify-between transition-transform duration-300 ease-out transform ${
           isOpen ? "translate-x-0" : "-translate-x-full"
         }`}
         role="dialog"
@@ -113,15 +131,15 @@ export default function MobileNavDrawer({
         aria-label="Mobile Navigation Menu"
         data-testid="mobile-nav-drawer"
       >
-        {/* Top Header */}
-        <div className="flex items-center justify-between px-4 py-3.5 border-b border-[var(--surface-border)] bg-[var(--nav-bg)]">
+        {/* Drawer Header (Fixed at top) */}
+        <div className="flex-shrink-0 flex items-center justify-between px-4 py-3.5 border-b border-[var(--surface-border)] bg-[var(--surface-card)]">
           <LocalizedClientLink href="/" onClick={() => setIsOpen(false)}>
             <Logo />
           </LocalizedClientLink>
           <button
             type="button"
             onClick={() => setIsOpen(false)}
-            className="flex items-center justify-center w-10 h-10 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-black/5 dark:hover:bg-white/5 transition"
+            className="flex items-center justify-center w-11 h-11 rounded-lg text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-black/5 dark:hover:bg-white/5 transition"
             aria-label="Close navigation menu"
             data-testid="close-mobile-menu"
           >
@@ -129,8 +147,8 @@ export default function MobileNavDrawer({
           </button>
         </div>
 
-        {/* Drawer Scrollable Content */}
-        <div className="flex-1 overflow-y-auto px-4 py-4 space-y-5">
+        {/* Drawer Scrollable Content Body */}
+        <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-4 py-4 space-y-5">
           {/* User Account Card */}
           <div className="p-3.5 rounded-2xl border border-[var(--surface-border)] bg-[var(--bg-card)]">
             {customer || session?.user ? (
@@ -148,7 +166,7 @@ export default function MobileNavDrawer({
                     </div>
                   )}
                   <div className="min-w-0 flex-1">
-                    <p className="text-xs text-amber-500 font-bold uppercase tracking-wider">
+                    <p className="text-[10px] text-amber-500 font-bold uppercase tracking-wider">
                       Verified Member
                     </p>
                     <p className="text-sm font-bold text-[var(--text-primary)] truncate">
@@ -164,7 +182,7 @@ export default function MobileNavDrawer({
                   <LocalizedClientLink
                     href="/account"
                     onClick={() => setIsOpen(false)}
-                    className="py-1.5 px-2 text-center text-xs font-semibold rounded-lg bg-amber-500/10 text-amber-500 hover:bg-amber-500/20 transition"
+                    className="py-2 px-2 text-center text-xs font-semibold rounded-lg bg-amber-500/10 text-amber-500 hover:bg-amber-500/20 transition min-h-[44px] flex items-center justify-center"
                   >
                     My Account
                   </LocalizedClientLink>
@@ -174,7 +192,7 @@ export default function MobileNavDrawer({
                       setIsOpen(false)
                       signOut()
                     }}
-                    className="py-1.5 px-2 text-center text-xs font-medium rounded-lg text-rose-500 hover:bg-rose-500/10 flex items-center justify-center gap-1 transition"
+                    className="py-2 px-2 text-center text-xs font-medium rounded-lg text-rose-500 hover:bg-rose-500/10 flex items-center justify-center gap-1 transition min-h-[44px]"
                   >
                     <LogOut className="w-3.5 h-3.5" />
                     <span>Sign Out</span>
@@ -194,7 +212,7 @@ export default function MobileNavDrawer({
                   <LocalizedClientLink
                     href="/account"
                     onClick={() => setIsOpen(false)}
-                    className="py-2 px-3 text-center text-xs font-bold rounded-lg bg-amber-500 text-black hover:bg-amber-400 transition flex items-center justify-center gap-1"
+                    className="py-2.5 px-3 text-center text-xs font-bold rounded-lg bg-amber-500 text-black hover:bg-amber-400 transition flex items-center justify-center gap-1 min-h-[44px]"
                   >
                     <LogIn className="w-3.5 h-3.5" />
                     <span>Sign In</span>
@@ -202,7 +220,7 @@ export default function MobileNavDrawer({
                   <LocalizedClientLink
                     href="/account"
                     onClick={() => setIsOpen(false)}
-                    className="py-2 px-3 text-center text-xs font-semibold rounded-lg border border-[var(--surface-border)] bg-[var(--surface-card)] hover:bg-[var(--bg-subtle)] text-[var(--text-primary)] transition flex items-center justify-center gap-1"
+                    className="py-2.5 px-3 text-center text-xs font-semibold rounded-lg border border-[var(--surface-border)] bg-[var(--surface-card)] hover:bg-[var(--bg-subtle)] text-[var(--text-primary)] transition flex items-center justify-center gap-1 min-h-[44px]"
                   >
                     <UserPlus className="w-3.5 h-3.5" />
                     <span>Join</span>
@@ -219,9 +237,9 @@ export default function MobileNavDrawer({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search products, brands, parts..."
-              className="w-full pl-9 pr-3 py-2 text-xs rounded-xl bg-[var(--bg-card)] border border-[var(--surface-border)] text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-1 focus:ring-amber-500 transition"
+              className="w-full pl-9 pr-3 py-2.5 text-xs rounded-xl bg-[var(--bg-card)] border border-[var(--surface-border)] text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-1 focus:ring-amber-500 transition"
             />
-            <Search className="w-4 h-4 text-[var(--text-muted)] absolute left-3 top-2.5 pointer-events-none" />
+            <Search className="w-4 h-4 text-[var(--text-muted)] absolute left-3 top-3 pointer-events-none" />
           </form>
 
           {/* Core Navigation Links */}
@@ -233,7 +251,7 @@ export default function MobileNavDrawer({
             <LocalizedClientLink
               href="/"
               onClick={() => setIsOpen(false)}
-              className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-[var(--text-primary)] hover:bg-black/5 dark:hover:bg-white/5 transition"
+              className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-[var(--text-primary)] hover:bg-black/5 dark:hover:bg-white/5 transition min-h-[44px]"
             >
               <Home className="w-4 h-4 text-amber-500" />
               <span>Home</span>
@@ -242,7 +260,7 @@ export default function MobileNavDrawer({
             <LocalizedClientLink
               href="/store"
               onClick={() => setIsOpen(false)}
-              className="flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold text-[var(--text-primary)] hover:bg-black/5 dark:hover:bg-white/5 transition"
+              className="flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold text-[var(--text-primary)] hover:bg-black/5 dark:hover:bg-white/5 transition min-h-[44px]"
             >
               <div className="flex items-center gap-3">
                 <ShoppingBag className="w-4 h-4 text-amber-500" />
@@ -256,7 +274,7 @@ export default function MobileNavDrawer({
             <LocalizedClientLink
               href="/deals"
               onClick={() => setIsOpen(false)}
-              className="flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold text-amber-500 bg-amber-500/5 hover:bg-amber-500/10 transition"
+              className="flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-bold text-amber-500 bg-amber-500/5 hover:bg-amber-500/10 transition min-h-[44px]"
             >
               <div className="flex items-center gap-3">
                 <Flame className="w-4 h-4 text-amber-500 fill-amber-500" />
@@ -270,7 +288,7 @@ export default function MobileNavDrawer({
             <LocalizedClientLink
               href="/editors-pick"
               onClick={() => setIsOpen(false)}
-              className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-[var(--text-primary)] hover:bg-black/5 dark:hover:bg-white/5 transition"
+              className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-[var(--text-primary)] hover:bg-black/5 dark:hover:bg-white/5 transition min-h-[44px]"
             >
               <Star className="w-4 h-4 text-amber-500" />
               <span>Editor&apos;s Pick</span>
@@ -283,7 +301,7 @@ export default function MobileNavDrawer({
               <button
                 type="button"
                 onClick={() => setIsCategoriesOpen(!isCategoriesOpen)}
-                className="w-full flex items-center justify-between px-2 py-2 text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] hover:text-[var(--text-primary)] transition"
+                className="w-full flex items-center justify-between px-2 py-2 text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] hover:text-[var(--text-primary)] transition min-h-[44px]"
               >
                 <span>Shop By Category</span>
                 <ChevronDown
@@ -300,7 +318,7 @@ export default function MobileNavDrawer({
                       key={category.id}
                       href={`/categories/${category.handle}`}
                       onClick={() => setIsOpen(false)}
-                      className="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium text-[var(--text-secondary)] hover:text-amber-500 hover:bg-black/5 dark:hover:bg-white/5 transition"
+                      className="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium text-[var(--text-secondary)] hover:text-amber-500 hover:bg-black/5 dark:hover:bg-white/5 transition min-h-[44px]"
                     >
                       <span>{category.name}</span>
                       <ChevronRight className="w-3 h-3 text-[var(--text-muted)]" />
@@ -317,7 +335,7 @@ export default function MobileNavDrawer({
               <button
                 type="button"
                 onClick={() => setIsCollectionsOpen(!isCollectionsOpen)}
-                className="w-full flex items-center justify-between px-2 py-2 text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] hover:text-[var(--text-primary)] transition"
+                className="w-full flex items-center justify-between px-2 py-2 text-xs font-bold uppercase tracking-wider text-[var(--text-muted)] hover:text-[var(--text-primary)] transition min-h-[44px]"
               >
                 <span>Collections</span>
                 <ChevronDown
@@ -334,7 +352,7 @@ export default function MobileNavDrawer({
                       key={collection.id}
                       href={`/collections/${collection.handle}`}
                       onClick={() => setIsOpen(false)}
-                      className="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium text-[var(--text-secondary)] hover:text-amber-500 hover:bg-black/5 dark:hover:bg-white/5 transition"
+                      className="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium text-[var(--text-secondary)] hover:text-amber-500 hover:bg-black/5 dark:hover:bg-white/5 transition min-h-[44px]"
                     >
                       <span>{collection.title}</span>
                       <ChevronRight className="w-3 h-3 text-[var(--text-muted)]" />
@@ -353,7 +371,7 @@ export default function MobileNavDrawer({
             <LocalizedClientLink
               href="/customer-care"
               onClick={() => setIsOpen(false)}
-              className="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-black/5 dark:hover:bg-white/5 transition"
+              className="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-black/5 dark:hover:bg-white/5 transition min-h-[44px]"
             >
               <HelpCircle className="w-4 h-4 text-amber-500" />
               <span>Customer Care Hub</span>
@@ -361,7 +379,7 @@ export default function MobileNavDrawer({
             <LocalizedClientLink
               href="/returns"
               onClick={() => setIsOpen(false)}
-              className="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-black/5 dark:hover:bg-white/5 transition"
+              className="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-black/5 dark:hover:bg-white/5 transition min-h-[44px]"
             >
               <Package className="w-4 h-4 text-amber-500" />
               <span>Returns & Order Tracking</span>
@@ -369,8 +387,8 @@ export default function MobileNavDrawer({
           </div>
         </div>
 
-        {/* Drawer Footer: Theme Toggle, Country Select & Copyright */}
-        <div className="p-4 border-t border-[var(--surface-border)] bg-[var(--nav-bg)] space-y-3">
+        {/* Drawer Footer (Fixed at bottom) */}
+        <div className="flex-shrink-0 p-4 border-t border-[var(--surface-border)] bg-[var(--surface-card)] space-y-3 pb-[max(1rem,env(safe-area-inset-bottom))]">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-[var(--text-secondary)]">
               Appearance
@@ -391,7 +409,26 @@ export default function MobileNavDrawer({
             © {new Date().getFullYear()} SYA Store Lusaka. All rights reserved.
           </p>
         </div>
-      </div>
+      </aside>
+    </>
+  )
+
+  return (
+    <div className="flex small:hidden items-center">
+      {/* ── Hamburger Trigger Button ── */}
+      <button
+        type="button"
+        onClick={() => setIsOpen(true)}
+        className="flex items-center justify-center w-11 h-11 -ml-2 rounded-lg text-[var(--text-primary)] hover:bg-black/5 dark:hover:bg-white/5 transition"
+        aria-label="Open mobile navigation menu"
+        aria-expanded={isOpen}
+        data-testid="mobile-menu-trigger"
+      >
+        <Menu className="w-5 h-5 text-amber-500" />
+      </button>
+
+      {/* Render via Portal directly to body to bypass header backdrop-filter constraints */}
+      {mounted && createPortal(drawerContent, document.body)}
     </div>
   )
 }

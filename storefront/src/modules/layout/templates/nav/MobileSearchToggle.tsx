@@ -49,7 +49,7 @@ export default function MobileSearchToggle() {
 
       {/* Expandable search bar underneath navbar */}
       {isOpen && (
-        <div className="fixed top-14 left-0 right-0 bg-[var(--surface-card)] border-b border-[var(--surface-border)] p-3 z-40 shadow-lg animate-in slide-in-from-top-2 duration-200">
+        <div className="absolute top-full left-0 right-0 w-full bg-[var(--surface-card)] border-b border-[var(--surface-border)] p-3 z-40 shadow-lg animate-in slide-in-from-top-2 duration-200">
           <form onSubmit={handleSubmit} className="relative flex items-center w-full">
             <Search className="w-4 h-4 text-[var(--text-muted)] absolute left-3 pointer-events-none" />
             <input
