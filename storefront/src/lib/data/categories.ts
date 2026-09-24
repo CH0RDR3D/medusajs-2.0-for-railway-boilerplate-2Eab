@@ -99,6 +99,34 @@ export const getCategoryByHandle = async (categoryHandle: string[]) => {
     category = fallbackResponse.product_categories[0]
   }
 
+  // Resilient fallback lookup if handle has alternate slug formatting (e.g. healthandbeauty vs health-and-beauty)
+  if (!category) {
+    try {
+      const allCategories = await listCategories()
+      const cleanStr = (s?: string) => s?.toLowerCase().replace(/[^a-z0-9]/g, "") || ""
+      const cleanTarget = cleanStr(fallbackHandle || handle)
+
+      if (cleanTarget) {
+        const found = allCategories.find((c) => {
+          const cleanH = cleanStr(c.handle)
+          const cleanN = cleanStr(c.name)
+          return (
+            cleanH === cleanTarget ||
+            cleanN === cleanTarget ||
+            (cleanTarget.length > 3 && cleanH.includes(cleanTarget)) ||
+            (cleanTarget.length > 3 && cleanTarget.includes(cleanH))
+          )
+        })
+
+        if (found) {
+          category = found
+        }
+      }
+    } catch {
+      // Fallback lookup error ignored
+    }
+  }
+
   if (!category) {
     return {
       product_categories: [],

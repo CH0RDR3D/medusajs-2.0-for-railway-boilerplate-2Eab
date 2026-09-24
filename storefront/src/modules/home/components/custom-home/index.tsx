@@ -4,8 +4,8 @@ import React, { useState } from "react"
 import Hero from "../hero"
 import ProductGrid from "./Product-Grid"
 import EditorsPickCarousel from "../editor-picks"
+import CategoryCarousel from "../category-carousel"
 import Link from "next/link"
-import Image from "next/image"
 import { useParams, useRouter } from "next/navigation"
 import { HttpTypes } from "@medusajs/types"
 
@@ -41,14 +41,29 @@ export default function CustomHomeLayout({ categories, products, editorsPickProd
     return orig > calc
   })
 
-  const featuredProducts = products.filter((p) => {
-    const calc = p.variants?.[0]?.calculated_price?.calculated_amount ?? 0
-    const orig = p.variants?.[0]?.calculated_price?.original_amount ?? 0
-    return orig <= calc
+  // Recent products / New Arrivals sorted by newest created_at timestamp
+  const recentProducts = [...products].sort((a, b) => {
+    const timeA = a.created_at ? new Date(a.created_at).getTime() : 0
+    const timeB = b.created_at ? new Date(b.created_at).getTime() : 0
+    return timeB - timeA
   })
 
-  // First 4 categories for spotlight cards
-  const spotlightCategories = categories.slice(0, 4)
+  // Health & Beauty specific showcase if available
+  const cleanStr = (s?: string) => s?.toLowerCase().replace(/[^a-z0-9]/g, "") || ""
+  const healthBeautyProducts = products.filter((p) =>
+    p.categories?.some((c) => {
+      const cleanH = cleanStr(c.handle)
+      const cleanN = cleanStr(c.name)
+      return (
+        cleanH.includes("health") ||
+        cleanH.includes("beauty") ||
+        cleanN.includes("health") ||
+        cleanN.includes("beauty") ||
+        cleanH.includes("wellness") ||
+        cleanN.includes("wellness")
+      )
+    })
+  )
 
   return (
     <div className="min-h-screen pb-20" style={{ background: "var(--bg-base)" }}>
@@ -56,7 +71,7 @@ export default function CustomHomeLayout({ categories, products, editorsPickProd
       <Hero />
 
       {/* ── Homepage Search & Sort Bar ──────────────────────────── */}
-      <div className="max-w-7xl mx-auto px-4 -mt-8 md:-mt-14 relative z-30 mb-8">
+      <div className="max-w-7xl mx-auto px-4 -mt-8 md:-mt-14 relative z-30 mb-4">
         <form
           onSubmit={handleSearchAndSort}
           className="rounded-2xl p-4 md:p-5 border border-black/10 dark:border-white/10 shadow-xl flex flex-col md:flex-row items-center gap-3"
@@ -94,7 +109,7 @@ export default function CustomHomeLayout({ categories, products, editorsPickProd
           {/* Submit Button */}
           <button
             type="submit"
-            className="w-full md:w-auto px-6 py-2.5 bg-amber-400 hover:bg-amber-300 text-black text-sm font-bold rounded-xl transition shadow-md hover:scale-105 flex items-center justify-center gap-2"
+            className="w-full md:w-auto px-6 py-2.5 bg-amber-400 hover:bg-amber-300 text-black text-sm font-bold rounded-xl transition shadow-md hover:scale-105 flex items-center justify-center gap-2 cursor-pointer"
           >
             <span>Search & Sort</span>
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -104,49 +119,15 @@ export default function CustomHomeLayout({ categories, products, editorsPickProd
         </form>
       </div>
 
-      {/* ── Category Spotlight Cards ────────────────────────────── */}
-      <div className="max-w-7xl mx-auto px-4 relative z-20">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {spotlightCategories.map((cat) => (
-            <Link
-              key={cat.id}
-              href={`/categories/${cat.handle}`}
-              className="group flex flex-col rounded-2xl overflow-hidden border border-black/8 dark:border-white/8 hover:border-amber-400/30 transition-all duration-300"
-              style={{ background: "var(--bg-card)" }}
-            >
-              {/* Category thumbnail from first product */}
-              <div className="relative w-full aspect-[4/3] overflow-hidden" style={{ background: "var(--bg-surface)" }}>
-                {cat.products?.[0]?.thumbnail ? (
-                  <Image
-                    src={cat.products[0].thumbnail}
-                    alt={cat.name}
-                    fill
-                    className="object-contain p-4 group-hover:scale-110 transition-transform duration-500"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center" style={{ background: "var(--bg-surface)" }}>
-                    <svg className="w-10 h-10 text-[var(--text-muted)]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                  </div>
-                )}
-              </div>
-
-              <div className="px-4 py-3 flex items-center justify-between">
-                <span className="text-sm font-semibold text-[var(--text-primary)] group-hover:text-[var(--text-primary)] transition line-clamp-1">
-                  {cat.name}
-                </span>
-                <svg className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
-              </div>
-            </Link>
-          ))}
-        </div>
-      </div>
+      {/* ── Dynamic Category Carousel ────────────────────────────── */}
+      <CategoryCarousel
+        categories={categories}
+        products={products}
+        countryCode={countryCode}
+      />
 
       {/* ── Promo Banner Strip ──────────────────────────────────── */}
-      <div className="max-w-7xl mx-auto px-4 mt-12">
+      <div className="max-w-7xl mx-auto px-4 mt-6">
         <div
           className="relative w-full rounded-2xl overflow-hidden flex items-center justify-between px-8 py-6 md:py-8"
           style={{
@@ -182,29 +163,45 @@ export default function CustomHomeLayout({ categories, products, editorsPickProd
       {/* ── Product Grids & Carousels ──────────────────────────── */}
       <div className="max-w-7xl mx-auto px-4 mt-10 space-y-8">
         {/* Deals section — emerald accent */}
-        <ProductGrid
-          products={dealsProducts.length ? dealsProducts : products}
-          region={region}
-          title="Today's Deals"
-          subtitle="Handpicked discounts — updated daily"
-          accentColor="emerald"
-          viewAllHref="/deals"
-        />
+        {dealsProducts.length > 0 && (
+          <ProductGrid
+            products={dealsProducts.slice(0, 8)}
+            region={region}
+            title="Today's Deals"
+            subtitle="Handpicked discounts — updated daily"
+            accentColor="emerald"
+            viewAllHref="/deals"
+          />
+        )}
 
         {/* Editor's Picks section — horizontal carousel */}
-        <EditorsPickCarousel
-          products={editorsPickProducts}
-          region={region}
-          countryCode={countryCode}
-        />
-
-        {/* All products / new arrivals — violet accent */}
-        {products.length > 4 && (
-          <ProductGrid
-            products={products.slice(4)}
+        {editorsPickProducts.length > 0 && (
+          <EditorsPickCarousel
+            products={editorsPickProducts}
             region={region}
-            title="New Arrivals"
-            subtitle="Just landed in the store"
+            countryCode={countryCode}
+          />
+        )}
+
+        {/* Health & Beauty Spotlight (if available) — amber accent */}
+        {healthBeautyProducts.length > 0 && (
+          <ProductGrid
+            products={healthBeautyProducts.slice(0, 8)}
+            region={region}
+            title="Health & Beauty"
+            subtitle="Premium skincare, wellness & beauty essentials"
+            accentColor="amber"
+            viewAllHref="/categories/healthandbeauty"
+          />
+        )}
+
+        {/* Recent products / New arrivals — violet accent */}
+        {recentProducts.length > 0 && (
+          <ProductGrid
+            products={recentProducts.slice(0, 8)}
+            region={region}
+            title="New Arrivals & Recent Products"
+            subtitle="Just landed in the store across all categories"
             accentColor="violet"
             viewAllHref="/new-arrivals"
           />

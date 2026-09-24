@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { Button, Text } from "@medusajs/ui"
+import { LUSAKA_DEFAULT_ORIGIN } from "@lib/util/delivery-estimate"
 
 type Location = {
   lat: number
@@ -16,14 +17,23 @@ type ResolvedAddress = {
   countryCode: string
 }
 
+type WarehouseInfo = {
+  lat: number
+  lng: number
+  name?: string
+  address?: string
+}
+
 type LocationMapProps = {
   apiKey?: string
   location: Location | null
+  warehouseLocation?: WarehouseInfo
   onResolveLocation: (
     location: Location,
     address: ResolvedAddress,
     deviceLocation: Location | null
   ) => void
+  onLocationChange?: (location: Location) => void
   onError?: (message: string | null) => void
 }
 
@@ -58,7 +68,7 @@ const loadGoogleMaps = (apiKey: string): Promise<void> => {
 
     const script = document.createElement("script")
     script.id = GOOGLE_MAPS_SCRIPT_ID
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}`
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=geometry`
     script.async = true
     script.defer = true
     script.onload = () => resolve()
@@ -67,10 +77,24 @@ const loadGoogleMaps = (apiKey: string): Promise<void> => {
   })
 }
 
-const LocationMap = ({ apiKey, location, onResolveLocation, onError }: LocationMapProps) => {
+const LocationMap = ({
+  apiKey,
+  location,
+  warehouseLocation = {
+    lat: LUSAKA_DEFAULT_ORIGIN.lat,
+    lng: LUSAKA_DEFAULT_ORIGIN.lng,
+    name: "Lusaka Central Warehouse",
+    address: "Cairo Road, Lusaka",
+  },
+  onResolveLocation,
+  onLocationChange,
+  onError,
+}: LocationMapProps) => {
   const mapElementRef = useRef<HTMLDivElement | null>(null)
   const mapRef = useRef<any>(null)
-  const markerRef = useRef<any>(null)
+  const userMarkerRef = useRef<any>(null)
+  const warehouseMarkerRef = useRef<any>(null)
+  const routeLineRef = useRef<any>(null)
   const geocoderRef = useRef<any>(null)
 
   const [loading, setLoading] = useState(false)
@@ -80,7 +104,10 @@ const LocationMap = ({ apiKey, location, onResolveLocation, onError }: LocationM
   const locationRef = useRef<Location | null>(location)
   locationRef.current = location
 
-  const fallbackCenter = useMemo(() => ({ lat: -15.3875, lng: 28.3228 }), [])
+  const fallbackCenter = useMemo(
+    () => ({ lat: -15.395, lng: 28.328 }),
+    []
+  )
 
   useEffect(() => {
     onError?.(error)
@@ -93,12 +120,15 @@ const LocationMap = ({ apiKey, location, onResolveLocation, onError }: LocationM
       const currentDeviceLoc =
         deviceLocOverride !== undefined ? deviceLocOverride : deviceLocationRef.current
 
+      // Notify real-time drag position
+      onLocationChange?.(coords)
+
       if (!geocoder) {
         // If geocoder is not initialized yet, supply coordinate fallback
         onResolveLocation(
           coords,
           {
-            address_1: "Pinned delivery location",
+            address_1: `Delivery Pin (${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)})`,
             city: "Lusaka",
             province: "Lusaka",
             postalCode: "10101",
@@ -162,13 +192,13 @@ const LocationMap = ({ apiKey, location, onResolveLocation, onError }: LocationM
         }
       })
     },
-    [onResolveLocation]
+    [onLocationChange, onResolveLocation]
   )
 
   // Promisified browser geolocation helper
   const getDeviceLocation = useCallback((): Promise<Location> => {
     return new Promise((resolve, reject) => {
-      if (!navigator.geolocation) {
+      if (typeof window === "undefined" || !navigator.geolocation) {
         reject(new Error("Geolocation not supported by browser"))
         return
       }
@@ -185,7 +215,7 @@ const LocationMap = ({ apiKey, location, onResolveLocation, onError }: LocationM
         },
         {
           enableHighAccuracy: true,
-          timeout: 10000,
+          timeout: 8000,
           maximumAge: 60000,
         }
       )
@@ -202,25 +232,37 @@ const LocationMap = ({ apiKey, location, onResolveLocation, onError }: LocationM
       setDeviceLocation(coords)
       deviceLocationRef.current = coords
 
-      if (mapRef.current && markerRef.current && window.google?.maps) {
+      if (mapRef.current && userMarkerRef.current && window.google?.maps) {
         const latLng = new window.google.maps.LatLng(coords.lat, coords.lng)
-        markerRef.current.setPosition(latLng)
-        mapRef.current.panTo(latLng)
-        mapRef.current.setZoom(16)
+        userMarkerRef.current.setPosition(latLng)
+
+        // Update route line
+        if (routeLineRef.current) {
+          routeLineRef.current.setPath([
+            { lat: warehouseLocation.lat, lng: warehouseLocation.lng },
+            coords,
+          ])
+        }
+
+        // Adjust bounds
+        const bounds = new window.google.maps.LatLngBounds()
+        bounds.extend(new window.google.maps.LatLng(warehouseLocation.lat, warehouseLocation.lng))
+        bounds.extend(latLng)
+        mapRef.current.fitBounds(bounds, { top: 50, right: 50, bottom: 50, left: 50 })
       }
 
       reverseGeocode(coords, coords)
     } catch (err: any) {
-      setError("Unable to access your current location. Please check browser permissions or drag the pin.")
+      setError("Unable to access your current GPS location. You can drag the delivery pin to your location.")
     } finally {
       setLoading(false)
     }
-  }, [getDeviceLocation, reverseGeocode])
+  }, [getDeviceLocation, reverseGeocode, warehouseLocation.lat, warehouseLocation.lng])
 
-  // Initialize Google Map, auto-request geolocation on mount, pin marker, and resolve address
+  // Initialize Google Map, auto-request geolocation on mount, pin markers, and resolve address
   useEffect(() => {
     if (!apiKey) {
-      setError("NEXT_PUBLIC_GOOGLE_MAPS_API_KEY is missing")
+      setError(null) // Do not treat missing key as fatal error, fallback UI is active
       return
     }
 
@@ -229,7 +271,7 @@ const LocationMap = ({ apiKey, location, onResolveLocation, onError }: LocationM
     window.gm_authFailure = () => {
       if (!disposed) {
         setError(
-          "Google Maps couldn't authenticate (invalid or restricted API key). Enter your address manually below."
+          "Google Maps API authentication failed. Distance will be calculated via our road-distance fallback engine."
         )
       }
     }
@@ -252,7 +294,7 @@ const LocationMap = ({ apiKey, location, onResolveLocation, onError }: LocationM
         let initialDeviceLoc: Location | null = null
 
         if (locationRef.current) {
-          // Prioritize already saved delivery coordinates if returning to step
+          // Prioritize already saved delivery coordinates
           initialCenter = locationRef.current
         } else if (deviceResult.status === "fulfilled" && deviceResult.value) {
           // Auto-detected device location
@@ -262,10 +304,15 @@ const LocationMap = ({ apiKey, location, onResolveLocation, onError }: LocationM
           deviceLocationRef.current = deviceResult.value
         }
 
+        const warehouseCoords = {
+          lat: warehouseLocation.lat,
+          lng: warehouseLocation.lng,
+        }
+
         // Initialize Map
         const map = new window.google.maps.Map(mapElementRef.current, {
           center: initialCenter,
-          zoom: 15,
+          zoom: 14,
           fullscreenControl: false,
           mapTypeControl: false,
           streetViewControl: false,
@@ -277,33 +324,99 @@ const LocationMap = ({ apiKey, location, onResolveLocation, onError }: LocationM
         const geocoder = new window.google.maps.Geocoder()
         geocoderRef.current = geocoder
 
-        // Initialize Draggable Marker
-        const marker = new window.google.maps.Marker({
+        // 1. Warehouse / Hub Marker (Origin)
+        const warehouseMarker = new window.google.maps.Marker({
+          position: warehouseCoords,
+          map,
+          title: warehouseLocation.name || "Main Warehouse Origin",
+          icon: {
+            path: "M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z", // Material Store/Warehouse SVG path
+            fillColor: "#4f46e5",
+            fillOpacity: 1,
+            strokeColor: "#ffffff",
+            strokeWeight: 2,
+            scale: 1.5,
+            anchor: new window.google.maps.Point(12, 20),
+          },
+        })
+        warehouseMarkerRef.current = warehouseMarker
+
+        const warehouseInfoWindow = new window.google.maps.InfoWindow({
+          content: `<div style="padding: 4px; font-family: sans-serif;">
+            <strong style="color: #4f46e5;">🏬 ${warehouseLocation.name || "Lusaka Central Hub"}</strong>
+            <p style="margin: 4px 0 0 0; font-size: 12px; color: #475569;">Dispatch Origin</p>
+          </div>`,
+        })
+
+        warehouseMarker.addListener("click", () => {
+          warehouseInfoWindow.open(map, warehouseMarker)
+        })
+
+        // 2. User Delivery Marker (Destination)
+        const userMarker = new window.google.maps.Marker({
           position: initialCenter,
           map,
           draggable: true,
           animation: window.google.maps.Animation.DROP,
+          title: "Drag to your exact delivery location",
+          icon: {
+            path: "M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z",
+            fillColor: "#e11d48",
+            fillOpacity: 1,
+            strokeColor: "#ffffff",
+            strokeWeight: 2,
+            scale: 1.6,
+            anchor: new window.google.maps.Point(12, 22),
+          },
         })
-        markerRef.current = marker
+        userMarkerRef.current = userMarker
 
-        // Listen for drag end to update userSelectedLocation and re-run Geocoder
-        marker.addListener("dragend", (event: any) => {
+        // 3. Route Line connecting Warehouse -> User
+        const routeLine = new window.google.maps.Polyline({
+          path: [warehouseCoords, initialCenter],
+          geodesic: true,
+          strokeColor: "#3b82f6",
+          strokeOpacity: 0.7,
+          strokeWeight: 3,
+          map,
+        })
+        routeLineRef.current = routeLine
+
+        // Instant recalculation on pin drag
+        userMarker.addListener("drag", (event: any) => {
           const coords = {
             lat: event.latLng.lat(),
             lng: event.latLng.lng(),
           }
+          if (routeLineRef.current) {
+            routeLineRef.current.setPath([warehouseCoords, coords])
+          }
+          onLocationChange?.(coords)
+        })
+
+        // Final geocoding and fee persistence on dragend
+        userMarker.addListener("dragend", (event: any) => {
+          const coords = {
+            lat: event.latLng.lat(),
+            lng: event.latLng.lng(),
+          }
+          if (routeLineRef.current) {
+            routeLineRef.current.setPath([warehouseCoords, coords])
+          }
           reverseGeocode(coords)
         })
 
-        // Adjust map container rendering
-        window.google.maps.event.trigger(map, "resize")
-        map.setCenter(initialCenter)
+        // Fit map bounds to show both markers comfortably
+        const bounds = new window.google.maps.LatLngBounds()
+        bounds.extend(new window.google.maps.LatLng(warehouseCoords.lat, warehouseCoords.lng))
+        bounds.extend(new window.google.maps.LatLng(initialCenter.lat, initialCenter.lng))
+        map.fitBounds(bounds, { top: 60, right: 60, bottom: 60, left: 60 })
 
-        // Resolve address on mount
+        // Initial address resolution
         reverseGeocode(initialCenter, initialDeviceLoc)
       } catch (err: any) {
         if (!disposed) {
-          setError(err?.message || "Failed to initialize Google Maps")
+          setError("Google Maps preview unavailable. Our fallback distance engine is active.")
         }
       } finally {
         if (!disposed) {
@@ -317,42 +430,78 @@ const LocationMap = ({ apiKey, location, onResolveLocation, onError }: LocationM
     return () => {
       disposed = true
     }
-  }, [apiKey, fallbackCenter, getDeviceLocation, reverseGeocode])
+  }, [apiKey, fallbackCenter, getDeviceLocation, onLocationChange, reverseGeocode, warehouseLocation.lat, warehouseLocation.lng, warehouseLocation.name])
 
-  // Sync external location changes (e.g. from parent/saved state)
+  // Sync external location changes (e.g. from saved state)
   useEffect(() => {
-    if (!location || !mapRef.current || !markerRef.current || !window.google?.maps) {
+    if (!location || !mapRef.current || !userMarkerRef.current || !window.google?.maps) {
       return
     }
 
     const latLng = new window.google.maps.LatLng(location.lat, location.lng)
-    markerRef.current.setPosition(latLng)
-    mapRef.current.panTo(latLng)
-  }, [location])
+    userMarkerRef.current.setPosition(latLng)
+
+    if (routeLineRef.current) {
+      routeLineRef.current.setPath([
+        { lat: warehouseLocation.lat, lng: warehouseLocation.lng },
+        location,
+      ])
+    }
+  }, [location, warehouseLocation.lat, warehouseLocation.lng])
 
   return (
-    <div className="mt-6 flex flex-col gap-3">
+    <div className="mt-4 flex flex-col gap-3">
       <div className="flex items-center justify-between gap-3">
-        <Text className="txt-small text-ui-fg-subtle">Delivery location</Text>
+        <div className="flex items-center gap-2">
+          <span className="inline-block w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse" />
+          <Text className="txt-small font-medium text-ui-fg-base">
+            Pinpoint your delivery location
+          </Text>
+        </div>
         <Button
           type="button"
           size="small"
           variant="secondary"
           onClick={useMyLocation}
           isLoading={loading}
+          className="text-xs"
           data-testid="use-my-location-button"
         >
-          Use my location
+          📍 Use my GPS location
         </Button>
       </div>
-      <div
-        ref={mapElementRef}
-        className="h-[280px] w-full overflow-hidden rounded-xl border border-[var(--surface-border)] small:h-[360px]"
-        data-testid="checkout-map"
-      />
+
+      {apiKey ? (
+        <div
+          ref={mapElementRef}
+          className="h-[280px] w-full overflow-hidden rounded-xl border border-[var(--surface-border)] shadow-inner small:h-[340px]"
+          data-testid="checkout-map"
+        />
+      ) : (
+        <div className="rounded-xl border border-dashed border-ui-border-base bg-ui-bg-subtle p-6 text-center">
+          <div className="text-2xl mb-2">🗺️</div>
+          <Text className="txt-medium-plus text-ui-fg-base">Interactive Map Active</Text>
+          <Text className="txt-small text-ui-fg-subtle mt-1">
+            Distance and dynamic Yango delivery fees are computed live from our Lusaka Central Warehouse.
+          </Text>
+        </div>
+      )}
+
+      {/* Map Legend */}
+      <div className="flex items-center justify-between text-xs text-ui-fg-subtle bg-ui-bg-subtle/60 rounded-lg p-2.5 border border-ui-border-base">
+        <div className="flex items-center gap-1.5">
+          <span className="w-3 h-3 rounded-full bg-indigo-600 inline-block" />
+          <span>Warehouse Origin ({warehouseLocation.name || "Lusaka Central"})</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span className="w-3 h-3 rounded-full bg-rose-500 inline-block" />
+          <span>Your Delivery Pin (Drag to adjust)</span>
+        </div>
+      </div>
+
       {error && (
-        <Text className="text-small-regular text-rose-500" data-testid="checkout-map-error">
-          {error}
+        <Text className="text-small-regular text-amber-600" data-testid="checkout-map-error">
+          ℹ️ {error}
         </Text>
       )}
     </div>
@@ -360,4 +509,3 @@ const LocationMap = ({ apiKey, location, onResolveLocation, onError }: LocationM
 }
 
 export default LocationMap
-

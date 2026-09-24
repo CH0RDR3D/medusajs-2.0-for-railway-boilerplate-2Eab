@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">ShadyStore</string>
+    <string name="title_activity_main">ShadyStore</string>
+    <string name="package_name">com.shadystore.app</string>
+    <string name="custom_url_scheme">com.shadystore.app</string>
+</resources>

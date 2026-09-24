@@ -33,11 +33,18 @@ export default async function ProductSidebar({
   const collections = collectionsResult.collections ?? []
   const tags = facets.tags ?? []
 
+  const cleanStr = (s?: string) => s?.toLowerCase().replace(/[^a-z0-9]/g, "") || ""
+
   // Resolve active category and collection IDs from handles if not directly provided
   let currentCategoryId = activeCategoryId
   if (!currentCategoryId && activeCategoryHandle) {
+    const cleanTarget = cleanStr(activeCategoryHandle)
     const match = categories.find(
-      (c) => c.handle?.toLowerCase() === activeCategoryHandle.toLowerCase()
+      (c) =>
+        c.handle?.toLowerCase() === activeCategoryHandle.toLowerCase() ||
+        c.name?.toLowerCase() === activeCategoryHandle.toLowerCase() ||
+        (cleanTarget && cleanStr(c.handle) === cleanTarget) ||
+        (cleanTarget && cleanStr(c.name) === cleanTarget)
     )
     if (match) currentCategoryId = match.id
   }

@@ -420,6 +420,10 @@ export default async function seedDemoData({ container }: ExecArgs) {
           name: "Merch",
           is_active: true,
         },
+        {
+          name: "Health & Beauty",
+          is_active: true,
+        },
       ],
     },
   });
@@ -906,6 +910,134 @@ export default async function seedDemoData({ container }: ExecArgs) {
                 },
                 {
                   amount: 15,
+                  currency_code: "usd",
+                },
+              ],
+            },
+          ],
+          sales_channels: [
+            {
+              id: defaultSalesChannel[0].id,
+            },
+          ],
+        },
+        {
+          title: "Botanical Restorative Face Serum",
+          category_ids: [
+            categoryResult.find((cat) => cat.name === "Health & Beauty")!.id,
+          ],
+          description:
+            "Infused with organic rosehip and botanical antioxidants, this restorative serum deeply hydrates and brightens your natural complexion.",
+          handle: "botanical-restorative-face-serum",
+          weight: 150,
+          status: ProductStatus.PUBLISHED,
+          shipping_profile_id: shippingProfile.id,
+          images: [
+            {
+              url: "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=800&q=80",
+            },
+          ],
+          options: [
+            {
+              title: "Size",
+              values: ["30ml", "50ml"],
+            },
+          ],
+          variants: [
+            {
+              title: "30ml",
+              sku: "SERUM-30",
+              options: {
+                Size: "30ml",
+              },
+              prices: [
+                {
+                  amount: 28,
+                  currency_code: "eur",
+                },
+                {
+                  amount: 32,
+                  currency_code: "usd",
+                },
+              ],
+            },
+            {
+              title: "50ml",
+              sku: "SERUM-50",
+              options: {
+                Size: "50ml",
+              },
+              prices: [
+                {
+                  amount: 42,
+                  currency_code: "eur",
+                },
+                {
+                  amount: 48,
+                  currency_code: "usd",
+                },
+              ],
+            },
+          ],
+          sales_channels: [
+            {
+              id: defaultSalesChannel[0].id,
+            },
+          ],
+        },
+        {
+          title: "Nourishing Hydra-Glow Cream",
+          category_ids: [
+            categoryResult.find((cat) => cat.name === "Health & Beauty")!.id,
+          ],
+          description:
+            "Rich peptide moisturizing cream designed to lock in 24-hour hydration, strengthen skin barrier, and restore radiant elasticity.",
+          handle: "nourishing-hydra-glow-cream",
+          weight: 200,
+          status: ProductStatus.PUBLISHED,
+          shipping_profile_id: shippingProfile.id,
+          images: [
+            {
+              url: "https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=800&q=80",
+            },
+          ],
+          options: [
+            {
+              title: "Volume",
+              values: ["50ml", "100ml"],
+            },
+          ],
+          variants: [
+            {
+              title: "50ml",
+              sku: "CREAM-50",
+              options: {
+                Volume: "50ml",
+              },
+              prices: [
+                {
+                  amount: 24,
+                  currency_code: "eur",
+                },
+                {
+                  amount: 28,
+                  currency_code: "usd",
+                },
+              ],
+            },
+            {
+              title: "100ml",
+              sku: "CREAM-100",
+              options: {
+                Volume: "100ml",
+              },
+              prices: [
+                {
+                  amount: 38,
+                  currency_code: "eur",
+                },
+                {
+                  amount: 44,
                   currency_code: "usd",
                 },
               ],

@@ -18,7 +18,7 @@ export default function GoogleAutoSignIn() {
     return (
       <div className="w-full p-3.5 rounded-xl border border-[var(--surface-border)] bg-[var(--bg-card)] mb-6 flex items-center justify-center gap-2 text-xs text-[var(--text-secondary)] animate-pulse">
         <Loader2 className="h-4 w-4 animate-spin text-amber-500" />
-        <span>Detecting Google authentication status...</span>
+        <span>Verifying Google authentication status...</span>
       </div>
     )
   }

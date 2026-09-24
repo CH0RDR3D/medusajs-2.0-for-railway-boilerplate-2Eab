@@ -1,9 +1,11 @@
+export const dynamic = "force-static";
+
 import { NextRequest } from "next/server"
 
 const getBackendUrl = () =>
   process.env.MEDUSA_BACKEND_URL ||
   process.env.NEXT_PUBLIC_MEDUSA_BACKEND_URL ||
-  "http://localhost:9000"
+  "backend-production-f5fc4.up.railway.app"
 
 const getPublishableApiKey = () =>
   process.env.MEDUSA_PUBLISHABLE_KEY ||

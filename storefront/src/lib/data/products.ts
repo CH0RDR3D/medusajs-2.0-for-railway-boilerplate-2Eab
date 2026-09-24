@@ -210,18 +210,34 @@ export const listProductsWithSort = async ({
 
   let filtered = products
 
+  // ── Helper to normalize strings for forgiving matching ────────────────────────
+  const cleanStr = (s?: string) => s?.toLowerCase().replace(/[^a-z0-9]/g, "") || ""
+
   // ── Search filter ────────────────────────────────────────────────────────────
   const search = (q || (queryParams as any)?.q || "").trim().toLowerCase()
+  const cleanSearch = cleanStr(search)
   if (search) {
     filtered = filtered.filter((p) => {
+      const matchTitle = p.title?.toLowerCase().includes(search) || (cleanSearch && cleanStr(p.title).includes(cleanSearch))
+      const matchDesc = p.description?.toLowerCase().includes(search) || (cleanSearch && cleanStr(p.description).includes(cleanSearch))
+      const matchSubtitle = p.subtitle?.toLowerCase().includes(search)
+      const matchHandle = p.handle?.toLowerCase().includes(search) || (cleanSearch && cleanStr(p.handle).includes(cleanSearch))
+      const matchCollection = p.collection?.title?.toLowerCase().includes(search)
+      const matchTags = p.tags?.some((t) => t.value?.toLowerCase().includes(search) || (cleanSearch && cleanStr(t.value).includes(cleanSearch)))
+      const matchCats = p.categories?.some((c) => 
+        c.name?.toLowerCase().includes(search) || 
+        c.handle?.toLowerCase().includes(search) ||
+        (cleanSearch && cleanStr(c.name).includes(cleanSearch)) || 
+        (cleanSearch && cleanStr(c.handle).includes(cleanSearch))
+      )
       return (
-        p.title?.toLowerCase().includes(search) ||
-        p.description?.toLowerCase().includes(search) ||
-        p.subtitle?.toLowerCase().includes(search) ||
-        p.handle?.toLowerCase().includes(search) ||
-        p.collection?.title?.toLowerCase().includes(search) ||
-        p.tags?.some((t) => t.value?.toLowerCase().includes(search)) ||
-        p.categories?.some((c) => c.name?.toLowerCase().includes(search))
+        matchTitle ||
+        matchDesc ||
+        matchSubtitle ||
+        matchHandle ||
+        matchCollection ||
+        matchTags ||
+        matchCats
       )
     })
   }
@@ -236,13 +252,25 @@ export const listProductsWithSort = async ({
   }
 
   const normalizedCategory = category?.trim().toLowerCase()
+  const cleanedCategory = cleanStr(category)
   if (normalizedCategory) {
     filtered = filtered.filter((product) =>
       product.categories?.some((productCategory) => {
         const handle = productCategory.handle?.trim().toLowerCase()
         const name = productCategory.name?.trim().toLowerCase()
+        const cleanHandle = cleanStr(productCategory.handle)
+        const cleanName = cleanStr(productCategory.name)
 
-        return handle === normalizedCategory || name === normalizedCategory
+        return (
+          handle === normalizedCategory ||
+          name === normalizedCategory ||
+          (cleanedCategory && cleanHandle === cleanedCategory) ||
+          (cleanedCategory && cleanName === cleanedCategory) ||
+          (cleanedCategory.length >= 4 && cleanHandle.includes(cleanedCategory)) ||
+          (cleanedCategory.length >= 4 && cleanedCategory.includes(cleanHandle)) ||
+          (cleanedCategory.length >= 4 && cleanName.includes(cleanedCategory)) ||
+          (cleanedCategory.length >= 4 && cleanedCategory.includes(cleanName))
+        )
       })
     )
   }
@@ -252,7 +280,10 @@ export const listProductsWithSort = async ({
   if (categoryIdParam) {
     const categoryIds = Array.isArray(categoryIdParam) ? categoryIdParam : [categoryIdParam]
     filtered = filtered.filter((product) =>
-      product.categories?.some((c) => categoryIds.includes(c.id))
+      product.categories?.some((c) =>
+        categoryIds.includes(c.id) ||
+        (c.parent_category_id && categoryIds.includes(c.parent_category_id))
+      )
     )
   }
 

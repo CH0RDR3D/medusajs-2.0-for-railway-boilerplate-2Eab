@@ -1,0 +1,20 @@
+{
+  "name": "shadystore-mobile",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Capacitor Android app shell wrapping the shadystore storefront",
+  "scripts": {
+    "sync": "cap sync android",
+    "open": "cap open android",
+    "run": "cap run android",
+    "build": "cap build android",
+    "doctor": "cap doctor"
+  },
+  "dependencies": {
+    "@capacitor/android": "^7.4.4",
+    "@capacitor/core": "^7.4.4"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^7.4.4"
+  }
+}

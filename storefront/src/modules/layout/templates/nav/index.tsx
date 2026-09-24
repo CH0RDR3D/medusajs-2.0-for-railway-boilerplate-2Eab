@@ -119,9 +119,9 @@ export default async function Nav() {
             </div>
 
             {/* Theme toggle (Desktop only, available in mobile drawer footer) */}
-            <div className="hidden small:flex items-center">
+            {/* <div className="hidden small:flex items-center">
               <ThemeToggle />
-            </div>
+            </div> */}
 
             {/* Cart — always visible */}
             <Suspense

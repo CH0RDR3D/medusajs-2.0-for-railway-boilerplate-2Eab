@@ -13,6 +13,10 @@ const mediaUrl = mediaHost ? new URL(mediaHostHasScheme ? mediaHost : `https://$
  * @type {import('next').NextConfig}
  */
 const nextConfig = {
+  // Note: Capacitor (mobile/) loads this app live via capacitor.config.json's
+  // server.url instead of a bundled static export, so "output: export" must
+  // NOT be set here — it disables middleware and forces all API routes
+  // (e.g. NextAuth's [...nextauth]) to be static-only, breaking the web app.
   reactStrictMode: true,
   eslint: {
     ignoreDuringBuilds: true,
@@ -21,7 +25,7 @@ const nextConfig = {
     ignoreBuildErrors: true,
   },
   images: {
-    unoptimized: true,
+    unoptimized: true,     // Required for Capacitor: Native apps cannot use a server-side image optimization engine
     remotePatterns: [
       {
         protocol: "http",

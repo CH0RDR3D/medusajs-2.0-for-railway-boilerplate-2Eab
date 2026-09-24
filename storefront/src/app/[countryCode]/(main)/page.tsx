@@ -43,12 +43,10 @@ export default async function Home(props: {
     regionId: region.id,
   })
 
-  const shuffledProducts = shuffle(products || []).slice(0, 12)
-
   return (
     <CustomHomeLayout
       categories={categories || []}
-      products={shuffledProducts}
+      products={products || []}
       editorsPickProducts={editorsPickProducts}
       region={region}
     />

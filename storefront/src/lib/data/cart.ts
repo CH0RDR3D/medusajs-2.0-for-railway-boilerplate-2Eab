@@ -442,6 +442,11 @@ export async function setDeliveryDetails({
   location,
   deviceLocation,
   address,
+  distance_km,
+  duration_text,
+  yango_cost,
+  breakdown,
+  warehouseLocation,
 }: {
   isPickup: boolean
   location?: { lat: number; lng: number }
@@ -453,6 +458,17 @@ export async function setDeliveryDetails({
     province?: string
     postal_code?: string
     country_code?: string
+  }
+  distance_km?: number
+  duration_text?: string
+  yango_cost?: number
+  breakdown?: any
+  warehouseLocation?: {
+    lat: number
+    lng: number
+    name?: string
+    address_1?: string
+    city?: string
   }
 }) {
   try {
@@ -475,20 +491,22 @@ export async function setDeliveryDetails({
       : defaultRegionCountryCode
 
     const pickupAddress = {
-      address_1: "Store Pickup",
-      city: "Lusaka",
+      address_1: warehouseLocation?.name
+        ? `${warehouseLocation.name} - ${warehouseLocation.address_1 || "Cairo Road"}`
+        : "Store Pickup - Lusaka Central Warehouse",
+      city: warehouseLocation?.city || "Lusaka",
       province: "Lusaka",
       postal_code: "10101",
       country_code: defaultRegionCountryCode,
-      lat: -15.3875,
-      lng: 28.3228,
+      lat: warehouseLocation?.lat ?? -15.3875,
+      lng: warehouseLocation?.lng ?? 28.3228,
     }
 
     const resolvedLocation = isPickup
       ? { lat: pickupAddress.lat, lng: pickupAddress.lng }
       : {
-          lat: location?.lat ?? Number(cart.metadata?.lat ?? 0),
-          lng: location?.lng ?? Number(cart.metadata?.lng ?? 0),
+          lat: location?.lat ?? Number(cart.metadata?.lat ?? -15.3875),
+          lng: location?.lng ?? Number(cart.metadata?.lng ?? 28.3228),
         }
 
     const shippingAddress = {
@@ -510,6 +528,10 @@ export async function setDeliveryDetails({
       country_code: isPickup ? pickupAddress.country_code : countryCode,
     }
 
+    const finalDistance = typeof distance_km === "number" ? distance_km : (isPickup ? 0 : Number(cart.metadata?.distance_km ?? 0))
+    const finalDuration = duration_text || (isPickup ? "Instant" : (cart.metadata?.duration_text as string) || "15 mins")
+    const finalCost = isPickup ? 0 : (typeof yango_cost === "number" ? yango_cost : Number(cart.metadata?.yango_cost ?? 35))
+
     await updateCart({
       shipping_address: shippingAddress,
       billing_address: shippingAddress,
@@ -518,6 +540,21 @@ export async function setDeliveryDetails({
         is_pickup: isPickup,
         lat: resolvedLocation.lat,
         lng: resolvedLocation.lng,
+        distance_km: finalDistance,
+        duration_text: finalDuration,
+        yango_cost: finalCost,
+        breakdown: breakdown || cart.metadata?.breakdown || null,
+        warehouse_origin: warehouseLocation
+          ? {
+              name: warehouseLocation.name || "Lusaka Central Warehouse",
+              lat: warehouseLocation.lat,
+              lng: warehouseLocation.lng,
+            }
+          : (cart.metadata?.warehouse_origin || {
+              name: "Lusaka Central Warehouse",
+              lat: -15.3875,
+              lng: 28.3228,
+            }),
         ...(deviceLocation && {
           device_lat: deviceLocation.lat,
           device_lng: deviceLocation.lng,
