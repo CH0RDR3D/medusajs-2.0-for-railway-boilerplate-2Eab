@@ -4,6 +4,7 @@ import React, { useRef, useEffect, useState, useCallback, useMemo } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { HttpTypes } from "@medusajs/types"
+import { convertToLocale } from "@lib/util/money"
 
 interface CategoryCarouselProps {
   categories?: HttpTypes.StoreProductCategory[]
@@ -14,29 +15,66 @@ interface CategoryCarouselProps {
 /* ------------------------------------------------------------------ */
 /* Tuning knobs                                                        */
 /* ------------------------------------------------------------------ */
-const GAP = 16 // px, must match `gap-4` on the track
+const GAP = 16 // px, matches `gap-4` on track
 const AUTO_SPEED = 22 // px per second while auto-scrolling
 const MANUAL_PAUSE_MS = 1600 // pause after arrow click
-const TOUCH_PAUSE_MS = 2500 // pause after finger lifts (momentum)
+const TOUCH_PAUSE_MS = 2500 // pause after finger lifts
+
+interface CategoryProductPreview {
+  id: string
+  title: string
+  thumbnail: string
+  price?: string
+  handle?: string
+}
 
 // Category fallback icon generator based on category name
 const getCategoryIcon = (name: string) => {
   const lower = name.toLowerCase()
-  if (lower.includes("health") || lower.includes("beauty") || lower.includes("skin") || lower.includes("care") || lower.includes("wellness")) {
+  if (
+    lower.includes("health") ||
+    lower.includes("beauty") ||
+    lower.includes("skin") ||
+    lower.includes("care") ||
+    lower.includes("wellness")
+  ) {
     return (
       <svg className="w-8 h-8 text-pink-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={1.5}
+          d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+        />
       </svg>
     )
   }
-  if (lower.includes("shirt") || lower.includes("apparel") || lower.includes("cloth") || lower.includes("fashion") || lower.includes("pant") || lower.includes("sweat")) {
+  if (
+    lower.includes("shirt") ||
+    lower.includes("apparel") ||
+    lower.includes("cloth") ||
+    lower.includes("fashion") ||
+    lower.includes("pant") ||
+    lower.includes("sweat")
+  ) {
     return (
       <svg className="w-8 h-8 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={1.5}
+          d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"
+        />
       </svg>
     )
   }
-  if (lower.includes("electronic") || lower.includes("tech") || lower.includes("hardware") || lower.includes("gadget") || lower.includes("solar")) {
+  if (
+    lower.includes("electronic") ||
+    lower.includes("tech") ||
+    lower.includes("hardware") ||
+    lower.includes("gadget") ||
+    lower.includes("solar")
+  ) {
     return (
       <svg className="w-8 h-8 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
@@ -46,18 +84,28 @@ const getCategoryIcon = (name: string) => {
   if (lower.includes("vehicle") || lower.includes("auto") || lower.includes("car")) {
     return (
       <svg className="w-8 h-8 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 17a2 2 0 100-4 2 2 0 000 4zm8 0a2 2 0 100-4 2 2 0 000 4zM3 9l2.5-4.5A2 2 0 017.25 3.5h9.5a2 2 0 011.75 1L21 9v6a1 1 0 01-1 1h-1a2 2 0 01-4 0H9a2 2 0 01-4 0H4a1 1 0 01-1-1V9z" />
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={1.5}
+          d="M8 17a2 2 0 100-4 2 2 0 000 4zm8 0a2 2 0 100-4 2 2 0 000 4zM3 9l2.5-4.5A2 2 0 017.25 3.5h9.5a2 2 0 011.75 1L21 9v6a1 1 0 01-1 1h-1a2 2 0 01-4 0H9a2 2 0 01-4 0H4a1 1 0 01-1-1V9z"
+        />
       </svg>
     )
   }
   return (
     <svg className="w-8 h-8 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={1.5}
+        d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
+      />
     </svg>
   )
 }
 
-// Scoped styles (keyframes + edge fade). Prefixed with cc- to avoid collisions.
+// Scoped styles (keyframes + edge fade)
 const CAROUSEL_CSS = `
 @keyframes cc-rise {
   from { opacity: 0; transform: translateY(22px) scale(.96); }
@@ -95,6 +143,172 @@ const CAROUSEL_CSS = `
 }
 `
 
+/* ------------------------------------------------------------------ */
+/* Dynamic Category Card with Staggered Product Image Swapping        */
+/* ------------------------------------------------------------------ */
+interface DynamicCategoryCardProps {
+  cat: HttpTypes.StoreProductCategory
+  matchingPreviews: CategoryProductPreview[]
+  totalCount: number
+  copyIndex: number
+  cardIndex: number
+  countryCode?: string
+}
+
+function DynamicCategoryCard({
+  cat,
+  matchingPreviews,
+  totalCount,
+  copyIndex,
+  cardIndex,
+  countryCode,
+}: DynamicCategoryCardProps) {
+  const isClone = copyIndex !== 1
+  const [activeIdx, setActiveIdx] = useState(0)
+  const [isCardHovered, setIsCardHovered] = useState(false)
+
+  const hasPreviews = matchingPreviews.length > 0
+  const activePreview = hasPreviews ? matchingPreviews[activeIdx % matchingPreviews.length] : null
+
+  // Stagger auto-swap per card so all cards don't cross-fade at the exact same millisecond
+  useEffect(() => {
+    if (matchingPreviews.length <= 1 || isCardHovered) return
+
+    // Offset interval per card index (e.g. 3.2s, 3.8s, 4.4s, 3.5s)
+    const staggerOffset = ((cardIndex * 650) % 1800)
+    const intervalTime = 3200 + staggerOffset
+
+    const timer = setInterval(() => {
+      setActiveIdx((prev) => (prev + 1) % matchingPreviews.length)
+    }, intervalTime)
+
+    return () => clearInterval(timer)
+  }, [matchingPreviews.length, isCardHovered, cardIndex])
+
+  const targetHref = countryCode
+    ? `/${countryCode}/categories/${cat.handle}`
+    : `/categories/${cat.handle}`
+
+  return (
+    <Link
+      href={targetHref}
+      aria-hidden={isClone || undefined}
+      tabIndex={isClone ? -1 : undefined}
+      draggable={false}
+      onMouseEnter={() => setIsCardHovered(true)}
+      onMouseLeave={() => setIsCardHovered(false)}
+      style={{ animationDelay: `${Math.min(cardIndex, 8) * 70}ms` }}
+      className="cc-card cc-rise group relative flex flex-col w-[180px] sm:w-[220px] md:w-[240px] flex-shrink-0 rounded-2xl overflow-hidden border border-black/10 dark:border-white/10 hover:border-amber-400/60 transition-all duration-300 shadow-sm hover:shadow-[0_14px_32px_-10px_rgba(251,191,36,0.45)] bg-[var(--bg-surface)] hover:-translate-y-1.5 hover:scale-[1.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 select-none"
+    >
+      {/* Category Image Zone with Multi-Image Crossfade */}
+      <div className="relative w-full aspect-[4/3] overflow-hidden bg-[var(--bg-card)] flex items-center justify-center p-3">
+        {hasPreviews ? (
+          <div className="relative w-full h-full">
+            {matchingPreviews.slice(0, 6).map((preview, pIdx) => {
+              const isActive = pIdx === activeIdx % matchingPreviews.length
+              return (
+                <div
+                  key={preview.id || pIdx}
+                  className={`absolute inset-0 transition-all duration-700 ease-in-out flex items-center justify-center ${
+                    isActive
+                      ? "opacity-100 scale-100 z-10"
+                      : "opacity-0 scale-95 pointer-events-none z-0"
+                  }`}
+                >
+                  <Image
+                    src={preview.thumbnail}
+                    alt={isClone ? "" : preview.title || cat.name}
+                    fill
+                    sizes="(max-width: 640px) 180px, (max-width: 768px) 220px, 240px"
+                    className="object-contain p-2 group-hover:scale-110 group-hover:-rotate-1 transition-transform duration-500 ease-out"
+                  />
+                </div>
+              )
+            })}
+          </div>
+        ) : (
+          <div className="w-full h-full flex flex-col items-center justify-center gap-2 rounded-xl bg-gradient-to-br from-amber-400/5 via-amber-400/10 to-transparent p-4">
+            <div className="cc-float" style={{ animationDelay: `${(cardIndex % 5) * -0.7}s` }}>
+              {getCategoryIcon(cat.name)}
+            </div>
+            <span className="text-[10px] font-bold text-amber-500/80 uppercase tracking-widest text-center line-clamp-1">
+              {cat.name}
+            </span>
+          </div>
+        )}
+
+        {/* Shine sweep on hover */}
+        <span
+          aria-hidden="true"
+          className="cc-shine pointer-events-none absolute inset-y-0 left-0 w-1/3 bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-[130%]"
+        />
+
+        {/* Multi-product cycling dot indicators */}
+        {matchingPreviews.length > 1 && (
+          <div
+            className="absolute top-2.5 left-2.5 z-20 flex items-center gap-1 bg-black/50 dark:bg-black/75 backdrop-blur-xs px-2 py-1 rounded-full border border-white/10 transition-opacity duration-200"
+            aria-hidden="true"
+          >
+            {matchingPreviews.slice(0, 4).map((_, dotIdx) => {
+              const isDotActive = dotIdx === activeIdx % Math.min(matchingPreviews.length, 4)
+              return (
+                <span
+                  key={dotIdx}
+                  className={`h-1.5 rounded-full transition-all duration-300 ${
+                    isDotActive ? "w-3 bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.8)]" : "w-1.5 bg-white/40"
+                  }`}
+                />
+              )
+            })}
+          </div>
+        )}
+
+        {/* Total Item count badge */}
+        {totalCount > 0 && (
+          <span className="cc-badge absolute top-2.5 right-2.5 z-20 px-2 py-0.5 rounded-full text-[10px] font-bold bg-black/60 dark:bg-black/80 text-white backdrop-blur-sm border border-white/10">
+            {totalCount} {totalCount === 1 ? "item" : "items"}
+          </span>
+        )}
+
+        {/* Active Product Mini Overlay Badge (Crossfades along with image) */}
+        {activePreview && (
+          <div className="absolute bottom-2 inset-x-2 z-20 px-2.5 py-1.5 rounded-xl bg-black/65 dark:bg-black/80 backdrop-blur-md border border-white/15 flex items-center justify-between gap-1.5 shadow-md group-hover:bg-black/80 transition-all duration-300">
+            <span className="text-[10px] font-semibold text-white/95 truncate max-w-[100px] sm:max-w-[120px]">
+              {activePreview.title}
+            </span>
+            {activePreview.price && (
+              <span className="text-[10px] font-extrabold text-amber-400 flex-shrink-0">
+                {activePreview.price}
+              </span>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Category Details & View Action */}
+      <div className="p-3.5 flex items-center justify-between gap-2 border-t border-black/5 dark:border-white/5 bg-[var(--bg-surface)]">
+        <div className="flex-1 min-w-0">
+          <h3 className="text-xs sm:text-sm font-bold text-[var(--text-primary)] group-hover:text-amber-500 dark:group-hover:text-amber-400 transition line-clamp-1">
+            {cat.name}
+          </h3>
+          <p className="text-[10px] sm:text-xs text-[var(--text-muted)] line-clamp-1 mt-0.5">
+            {cat.description || "Explore category →"}
+          </p>
+        </div>
+
+        <div className="w-7 h-7 rounded-full flex items-center justify-center bg-black/5 dark:bg-white/5 group-hover:bg-amber-400 group-hover:text-black group-hover:rotate-[360deg] text-amber-400 transition-all duration-500 flex-shrink-0">
+          <svg className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+          </svg>
+        </div>
+      </div>
+    </Link>
+  )
+}
+
+/* ------------------------------------------------------------------ */
+/* Main CategoryCarousel Component                                    */
+/* ------------------------------------------------------------------ */
 export default function CategoryCarousel({
   categories: initialCategories = [],
   products = [],
@@ -108,9 +322,9 @@ export default function CategoryCarousel({
   const [canScrollRight, setCanScrollRight] = useState(false)
 
   // Auto-scroll state
-  const [loop, setLoop] = useState(false) // true when there are enough cards to loop seamlessly
-  const [paused, setPaused] = useState(false) // user toggle (play/pause button)
-  const loopWidth = useRef(0) // pixel width of ONE set of cards
+  const [loop, setLoop] = useState(false)
+  const [paused, setPaused] = useState(false)
+  const loopWidth = useRef(0)
   const flags = useRef({
     paused: false,
     hover: false,
@@ -121,7 +335,7 @@ export default function CategoryCarousel({
   })
 
   /* ---------------------------------------------------------------- */
-  /* Data loading (unchanged behaviour)                                */
+  /* Data loading fallback                                             */
   /* ---------------------------------------------------------------- */
   useEffect(() => {
     if (initialCategories && initialCategories.length > 0) {
@@ -165,8 +379,69 @@ export default function CategoryCarousel({
   }, [categories])
   const n = activeCategories.length
 
+  // Build product-to-category previews map
+  const categoryPreviewsMap = useMemo(() => {
+    const map = new Map<string, { previews: CategoryProductPreview[]; totalCount: number }>()
+
+    activeCategories.forEach((cat) => {
+      const matching = products.filter((p) =>
+        p.categories?.some(
+          (c) =>
+            c.id === cat.id ||
+            c.handle?.toLowerCase() === cat.handle?.toLowerCase() ||
+            cat.category_children?.some((child) => child.id === c.id || child.handle === c.handle)
+        )
+      )
+
+      const previews: CategoryProductPreview[] = []
+      const seenThumbnails = new Set<string>()
+
+      matching.forEach((p) => {
+        const thumb = p.thumbnail || p.images?.[0]?.url
+        if (thumb && !seenThumbnails.has(thumb)) {
+          seenThumbnails.add(thumb)
+          const calcAmount = p.variants?.[0]?.calculated_price?.calculated_amount
+          const currCode = p.variants?.[0]?.calculated_price?.currency_code || "zmw"
+          const priceFormatted = calcAmount
+            ? convertToLocale({ amount: calcAmount, currency_code: currCode })
+            : undefined
+
+          previews.push({
+            id: p.id,
+            title: p.title,
+            thumbnail: thumb,
+            price: priceFormatted,
+            handle: p.handle,
+          })
+        }
+      })
+
+      // If category has direct products or thumbnail attached
+      if (previews.length === 0 && cat.products && cat.products.length > 0) {
+        cat.products.forEach((cp) => {
+          if (cp.thumbnail && !seenThumbnails.has(cp.thumbnail)) {
+            seenThumbnails.add(cp.thumbnail)
+            previews.push({
+              id: cp.id,
+              title: cp.title,
+              thumbnail: cp.thumbnail,
+              handle: cp.handle,
+            })
+          }
+        })
+      }
+
+      map.set(cat.id, {
+        previews,
+        totalCount: matching.length > 0 ? matching.length : (cat.products?.length ?? 0),
+      })
+    })
+
+    return map
+  }, [activeCategories, products])
+
   /* ---------------------------------------------------------------- */
-  /* Measure: do we have enough cards to loop?                         */
+  /* Measure & Loop Layout                                            */
   /* ---------------------------------------------------------------- */
   const measure = useCallback(() => {
     const el = trackRef.current
@@ -174,7 +449,6 @@ export default function CategoryCarousel({
     if (!el || !first || n === 0) return
     const setWidth = n * (first.offsetWidth + GAP)
     loopWidth.current = setWidth
-    // Need one full set to be wider than the viewport, otherwise duplicates would be visible
     const shouldLoop = setWidth >= el.clientWidth + GAP
     setLoop((prev) => (prev === shouldLoop ? prev : shouldLoop))
   }, [n])
@@ -188,7 +462,6 @@ export default function CategoryCarousel({
     return () => ro.disconnect()
   }, [isLoading, n, measure])
 
-  // When looping we render 3 copies and live in the middle one
   useEffect(() => {
     const el = trackRef.current
     if (!el) return
@@ -196,7 +469,7 @@ export default function CategoryCarousel({
   }, [loop])
 
   /* ---------------------------------------------------------------- */
-  /* Scroll listener: arrows (non-loop), progress bar, loop wrap       */
+  /* Scroll listener                                                   */
   /* ---------------------------------------------------------------- */
   useEffect(() => {
     const el = trackRef.current
@@ -208,7 +481,6 @@ export default function CategoryCarousel({
       const w = loopWidth.current
       const sl = el.scrollLeft
 
-      // Progress bar
       if (progressRef.current) {
         let frac: number
         if (loop && w > 0) {
@@ -220,7 +492,6 @@ export default function CategoryCarousel({
       }
 
       if (loop) {
-        // After manual scrolling settles, jump back into the middle copy (invisible)
         clearTimeout(settle)
         settle = setTimeout(() => {
           if (el.scrollLeft >= 2 * w) el.scrollLeft -= w
@@ -249,12 +520,10 @@ export default function CategoryCarousel({
     flags.current.paused = paused
   }, [paused])
 
-  // Respect reduced-motion: start paused (user can still press play)
   useEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) setPaused(true)
   }, [])
 
-  // Only run while the carousel is on screen
   useEffect(() => {
     const el = trackRef.current
     if (!el) return
@@ -272,7 +541,7 @@ export default function CategoryCarousel({
     let raf = 0
     let last = performance.now()
     let pos = el.scrollLeft
-    let factor = 0 // 0 = stopped, 1 = full speed (eased so hover feels smooth)
+    let factor = 0
 
     const tick = (now: number) => {
       const dt = Math.min(now - last, 50) / 1000
@@ -285,7 +554,6 @@ export default function CategoryCarousel({
       factor += ((wantsRun ? 1 : 0) - factor) * Math.min(1, dt * 5)
 
       if (interacting || (!wantsRun && factor < 0.02)) {
-        // Someone else is in control: just follow the real position
         pos = el.scrollLeft
       } else {
         const w = loopWidth.current
@@ -320,43 +588,10 @@ export default function CategoryCarousel({
     flags.current.manualUntil = performance.now() + TOUCH_PAUSE_MS
   }
 
-  /* ---------------------------------------------------------------- */
-  /* Helpers (unchanged)                                               */
-  /* ---------------------------------------------------------------- */
-  const getCategoryThumbnail = (cat: HttpTypes.StoreProductCategory) => {
-    if (cat.products?.[0]?.thumbnail) {
-      return cat.products[0].thumbnail
-    }
-    const matchingProduct = products.find((p) =>
-      p.categories?.some(
-        (c) =>
-          c.id === cat.id ||
-          c.handle?.toLowerCase() === cat.handle?.toLowerCase() ||
-          cat.category_children?.some((child) => child.id === c.id || child.handle === c.handle)
-      )
-    )
-    return matchingProduct?.thumbnail || matchingProduct?.images?.[0]?.url || null
-  }
-
-  const getCategoryProductCount = (cat: HttpTypes.StoreProductCategory) => {
-    const directCount = cat.products?.length ?? 0
-    if (directCount > 0) return directCount
-
-    return products.filter((p) =>
-      p.categories?.some(
-        (c) =>
-          c.id === cat.id ||
-          c.handle?.toLowerCase() === cat.handle?.toLowerCase() ||
-          cat.category_children?.some((child) => child.id === c.id || child.handle === c.handle)
-      )
-    ).length
-  }
-
   if (!isLoading && (!activeCategories || activeCategories.length === 0)) {
     return null
   }
 
-  // Render 3 copies when looping (copy 1 is the real, accessible one)
   const copies = loop ? [0, 1, 2] : [1]
   const arrowLeftEnabled = loop || canScrollLeft
   const arrowRightEnabled = loop || canScrollRight
@@ -401,7 +636,7 @@ export default function CategoryCarousel({
 
           <div className="flex items-center gap-3">
             <Link
-              href="/categories"
+              href={countryCode ? `/${countryCode}/categories` : "/categories"}
               className="text-xs font-semibold px-4 py-2 rounded-full border border-amber-400/30 text-amber-500 dark:text-amber-400 bg-amber-400/10 hover:bg-amber-400/20 transition duration-150 flex items-center gap-1.5 flex-shrink-0"
             >
               <span>All Categories</span>
@@ -436,10 +671,11 @@ export default function CategoryCarousel({
                 onClick={() => scroll("left")}
                 disabled={!arrowLeftEnabled}
                 aria-label="Previous categories"
-                className={`w-9 h-9 rounded-full flex items-center justify-center border transition ${arrowLeftEnabled
-                  ? "border-black/15 dark:border-white/15 bg-[var(--bg-surface)] text-[var(--text-primary)] hover:border-amber-400/60 hover:text-amber-400 hover:scale-105 cursor-pointer"
-                  : "border-black/5 dark:border-white/5 opacity-30 cursor-not-allowed text-[var(--text-muted)]"
-                  }`}
+                className={`w-9 h-9 rounded-full flex items-center justify-center border transition ${
+                  arrowLeftEnabled
+                    ? "border-black/15 dark:border-white/15 bg-[var(--bg-surface)] text-[var(--text-primary)] hover:border-amber-400/60 hover:text-amber-400 hover:scale-105 cursor-pointer"
+                    : "border-black/5 dark:border-white/5 opacity-30 cursor-not-allowed text-[var(--text-muted)]"
+                }`}
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -450,10 +686,11 @@ export default function CategoryCarousel({
                 onClick={() => scroll("right")}
                 disabled={!arrowRightEnabled}
                 aria-label="Next categories"
-                className={`w-9 h-9 rounded-full flex items-center justify-center border transition ${arrowRightEnabled
-                  ? "border-black/15 dark:border-white/15 bg-[var(--bg-surface)] text-[var(--text-primary)] hover:border-amber-400/60 hover:text-amber-400 hover:scale-105 cursor-pointer"
-                  : "border-black/5 dark:border-white/5 opacity-30 cursor-not-allowed text-[var(--text-muted)]"
-                  }`}
+                className={`w-9 h-9 rounded-full flex items-center justify-center border transition ${
+                  arrowRightEnabled
+                    ? "border-black/15 dark:border-white/15 bg-[var(--bg-surface)] text-[var(--text-primary)] hover:border-amber-400/60 hover:text-amber-400 hover:scale-105 cursor-pointer"
+                    : "border-black/5 dark:border-white/5 opacity-30 cursor-not-allowed text-[var(--text-muted)]"
+                }`}
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -471,12 +708,12 @@ export default function CategoryCarousel({
           onFocus={() => (flags.current.focus = true)}
           onBlur={() => (flags.current.focus = false)}
         >
-          {/* Mobile floating left/right helpers */}
+          {/* Mobile floating navigation buttons */}
           {arrowLeftEnabled && !isLoading && (
             <button
               onClick={() => scroll("left")}
               aria-label="Scroll left"
-              className="sm:hidden absolute left-0 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-[var(--bg-card)]/90 backdrop-blur-md border border-black/10 dark:border-white/10 shadow-lg flex items-center justify-center text-[var(--text-primary)] cursor-pointer"
+              className="sm:hidden absolute left-0 top-1/2 -translate-y-1/2 z-30 w-8 h-8 rounded-full bg-[var(--bg-card)]/90 backdrop-blur-md border border-black/10 dark:border-white/10 shadow-lg flex items-center justify-center text-[var(--text-primary)] cursor-pointer"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -488,7 +725,7 @@ export default function CategoryCarousel({
             <button
               onClick={() => scroll("right")}
               aria-label="Scroll right"
-              className="sm:hidden absolute right-0 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-[var(--bg-card)]/90 backdrop-blur-md border border-black/10 dark:border-white/10 shadow-lg flex items-center justify-center text-[var(--text-primary)] cursor-pointer"
+              className="sm:hidden absolute right-0 top-1/2 -translate-y-1/2 z-30 w-8 h-8 rounded-full bg-[var(--bg-card)]/90 backdrop-blur-md border border-black/10 dark:border-white/10 shadow-lg flex items-center justify-center text-[var(--text-primary)] cursor-pointer"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
@@ -521,73 +758,20 @@ export default function CategoryCarousel({
             >
               {copies.map((copy) =>
                 activeCategories.map((cat, i) => {
-                  const thumbnail = getCategoryThumbnail(cat)
-                  const count = getCategoryProductCount(cat)
-                  const isClone = copy !== 1
+                  const data = categoryPreviewsMap.get(cat.id)
+                  const matchingPreviews = data?.previews || []
+                  const totalCount = data?.totalCount || 0
 
                   return (
-                    <Link
+                    <DynamicCategoryCard
                       key={`${cat.id}-${copy}`}
-                      href={`/categories/${cat.handle}`}
-                      aria-hidden={isClone || undefined}
-                      tabIndex={isClone ? -1 : undefined}
-                      draggable={false}
-                      style={{ animationDelay: `${Math.min(i, 8) * 70}ms` }}
-                      className="cc-card cc-rise group relative flex flex-col w-[170px] sm:w-[210px] md:w-[230px] flex-shrink-0 rounded-2xl overflow-hidden border border-black/10 dark:border-white/10 hover:border-amber-400/60 transition-all duration-300 shadow-sm hover:shadow-[0_14px_32px_-10px_rgba(251,191,36,0.5)] bg-[var(--bg-surface)] hover:-translate-y-1.5 hover:scale-[1.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400"
-                    >
-                      {/* Category Image Zone */}
-                      <div className="relative w-full aspect-[4/3] overflow-hidden bg-[var(--bg-card)] flex items-center justify-center p-3">
-                        {thumbnail ? (
-                          <Image
-                            src={thumbnail}
-                            alt={isClone ? "" : cat.name}
-                            fill
-                            sizes="(max-width: 640px) 170px, (max-width: 768px) 210px, 230px"
-                            className="object-contain p-3 group-hover:scale-110 group-hover:-rotate-2 transition-transform duration-500 ease-out"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex flex-col items-center justify-center gap-2 rounded-xl bg-gradient-to-br from-amber-400/5 via-amber-400/10 to-transparent p-4">
-                            <div className="cc-float" style={{ animationDelay: `${(i % 5) * -0.7}s` }}>
-                              {getCategoryIcon(cat.name)}
-                            </div>
-                            <span className="text-[10px] font-bold text-amber-500/80 uppercase tracking-widest text-center line-clamp-1">
-                              {cat.name}
-                            </span>
-                          </div>
-                        )}
-
-                        {/* Shine sweep on hover */}
-                        <span
-                          aria-hidden="true"
-                          className="cc-shine pointer-events-none absolute inset-y-0 left-0 w-1/3 bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-[130%]"
-                        />
-
-                        {/* Item count tag */}
-                        {count > 0 && (
-                          <span className="cc-badge absolute top-2.5 right-2.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-black/60 dark:bg-black/80 text-white backdrop-blur-sm border border-white/10">
-                            {count} {count === 1 ? "item" : "items"}
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Category Details */}
-                      <div className="p-3.5 flex items-center justify-between gap-2 border-t border-black/5 dark:border-white/5">
-                        <div className="flex-1 min-w-0">
-                          <h3 className="text-xs sm:text-sm font-bold text-[var(--text-primary)] group-hover:text-amber-500 dark:group-hover:text-amber-400 transition line-clamp-1">
-                            {cat.name}
-                          </h3>
-                          <p className="text-[10px] sm:text-xs text-[var(--text-muted)] line-clamp-1 mt-0.5">
-                            {cat.description || "Explore this category →"}
-                          </p>
-                        </div>
-
-                        <div className="w-7 h-7 rounded-full flex items-center justify-center bg-black/5 dark:bg-white/5 group-hover:bg-amber-400 group-hover:text-black group-hover:rotate-[360deg] text-amber-400 transition-all duration-500 flex-shrink-0">
-                          <svg className="w-3.5 h-3.5 transition-transform group-hover:translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                          </svg>
-                        </div>
-                      </div>
-                    </Link>
+                      cat={cat}
+                      matchingPreviews={matchingPreviews}
+                      totalCount={totalCount}
+                      copyIndex={copy}
+                      cardIndex={i}
+                      countryCode={countryCode}
+                    />
                   )
                 })
               )}

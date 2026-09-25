@@ -1,5 +1,6 @@
 import { Metadata } from "next"
 import { listCategories } from "@lib/data/categories"
+import { listCollections } from "@lib/data/collections"
 import { getProductsList, getDailyCuratedProductIds, getProductsById } from "@lib/data/products"
 import { getRegion } from "@lib/data/regions"
 import CustomHomeLayout from "@modules/home/components/custom-home"
@@ -25,8 +26,9 @@ export default async function Home(props: {
     return null
   }
 
-  // Fetch categories and products from Medusa backend
+  // Fetch categories, collections and products from Medusa backend
   const categories = await listCategories()
+  const { collections } = await listCollections({ limit: 20 })
   const { response: { products } } = await getProductsList({
     countryCode,
     queryParams: { limit: 100 },
@@ -46,6 +48,7 @@ export default async function Home(props: {
   return (
     <CustomHomeLayout
       categories={categories || []}
+      collections={collections || []}
       products={products || []}
       editorsPickProducts={editorsPickProducts}
       region={region}

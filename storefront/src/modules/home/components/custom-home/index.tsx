@@ -5,18 +5,26 @@ import Hero from "../hero"
 import ProductGrid from "./Product-Grid"
 import EditorsPickCarousel from "../editor-picks"
 import CategoryCarousel from "../category-carousel"
+import CollectionsPreview from "../collections-preview"
 import Link from "next/link"
 import { useParams, useRouter } from "next/navigation"
 import { HttpTypes } from "@medusajs/types"
 
 interface HomeLayoutProps {
   categories: HttpTypes.StoreProductCategory[]
+  collections?: HttpTypes.StoreCollection[]
   products: HttpTypes.StoreProduct[]
   editorsPickProducts: HttpTypes.StoreProduct[]
   region: HttpTypes.StoreRegion
 }
 
-export default function CustomHomeLayout({ categories, products, editorsPickProducts, region }: HomeLayoutProps) {
+export default function CustomHomeLayout({
+  categories,
+  collections = [],
+  products,
+  editorsPickProducts,
+  region,
+}: HomeLayoutProps) {
   const router = useRouter()
   const params = useParams()
   const countryCode = (params?.countryCode as string) || process.env.NEXT_PUBLIC_DEFAULT_REGION || "zm"
@@ -119,12 +127,22 @@ export default function CustomHomeLayout({ categories, products, editorsPickProd
         </form>
       </div>
 
+      {/* ── Featured Collections Interactive Preview ─────────────── */}
+      <CollectionsPreview
+        collections={collections}
+        products={products}
+        region={region}
+        countryCode={countryCode}
+      />
+
       {/* ── Dynamic Category Carousel ────────────────────────────── */}
       <CategoryCarousel
         categories={categories}
         products={products}
         countryCode={countryCode}
       />
+
+
 
       {/* ── Promo Banner Strip ──────────────────────────────────── */}
       <div className="max-w-7xl mx-auto px-4 mt-6">
