@@ -33,10 +33,12 @@ try {
   });
 } catch (err) {
   // Railway's cached pnpm content-addressable store can go stale/corrupt
-  // (ERR_PNPM_ENOENT copyfile), so retry once forcing a re-fetch from the registry.
-  console.warn('Initial pnpm install failed, retrying with --force (bypassing pnpm store cache)...');
-  execSync('pnpm i --prod --frozen-lockfile --force', {
+  // or lockfile might differ slightly for generated server package.json,
+  // so retry once with --no-frozen-lockfile --force.
+  console.warn('Initial pnpm install failed, retrying with --no-frozen-lockfile --force...');
+  execSync('pnpm i --prod --no-frozen-lockfile --force', {
     cwd: MEDUSA_SERVER_PATH,
     stdio: 'inherit'
   });
 }
+

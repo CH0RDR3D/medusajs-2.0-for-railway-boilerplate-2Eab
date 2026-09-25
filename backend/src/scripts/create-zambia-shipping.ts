@@ -129,9 +129,9 @@ export default async function createZambiaFulfillment({ container }: ExecArgs) {
   }
 
   // 5. Clean up old/redundant options (like 50 ZMW Standard Delivery)
-  const existingOptions = await fulfillmentModuleService.listShippingOptions({
+  const existingOptions = (await (fulfillmentModuleService as any).listShippingOptions({
     service_zone_id: serviceZone.id,
-  });
+  })) as any[];
 
   const oldOptionsToDelete = existingOptions.filter(
     (o: any) =>
