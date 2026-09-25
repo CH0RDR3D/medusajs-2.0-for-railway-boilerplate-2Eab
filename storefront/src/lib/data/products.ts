@@ -211,7 +211,7 @@ export const listProductsWithSort = async ({
   let filtered = products
 
   // ── Helper to normalize strings for forgiving matching ────────────────────────
-  const cleanStr = (s?: string) => s?.toLowerCase().replace(/[^a-z0-9]/g, "") || ""
+  const cleanStr = (s?: string | null) => s?.toLowerCase().replace(/[^a-z0-9]/g, "") || ""
 
   // ── Search filter ────────────────────────────────────────────────────────────
   const search = (q || (queryParams as any)?.q || "").trim().toLowerCase()

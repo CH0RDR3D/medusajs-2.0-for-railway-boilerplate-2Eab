@@ -73,8 +73,8 @@ export const DEFAULT_WAREHOUSE_LOCATION: StoreLocation = {
   province: "Lusaka",
   postal_code: "10101",
   country_code: "zm",
-  lat: -15.3875,
-  lng: 28.3228,
+  lat: -15.488449898458102,
+  lng: 28.251956946590706,
 }
 
 export const LUSAKA_DEFAULT_ORIGIN: Coordinates = {

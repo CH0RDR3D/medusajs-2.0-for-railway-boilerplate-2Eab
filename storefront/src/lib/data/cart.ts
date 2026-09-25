@@ -419,16 +419,25 @@ export async function deleteLineItem(lineId: string) {
 export async function setShippingMethod({
   cartId,
   shippingMethodId,
+  data,
 }: {
   cartId: string
   shippingMethodId: string
+  data?: Record<string, unknown>
 }) {
   try {
     const headers = {
       ...(await getAuthHeaders()),
     }
 
-    await sdk.store.cart.addShippingMethod(cartId, { option_id: shippingMethodId }, {}, headers)
+    const payload: { option_id: string; data?: Record<string, unknown> } = {
+      option_id: shippingMethodId,
+    }
+    if (data) {
+      payload.data = data
+    }
+
+    await sdk.store.cart.addShippingMethod(cartId, payload, {}, headers)
     const cartCacheTag = await getCacheTag("carts")
     revalidateTag(cartCacheTag)
     return { ok: true }
@@ -498,15 +507,15 @@ export async function setDeliveryDetails({
       province: "Lusaka",
       postal_code: "10101",
       country_code: defaultRegionCountryCode,
-      lat: warehouseLocation?.lat ?? -15.3875,
-      lng: warehouseLocation?.lng ?? 28.3228,
+      lat: warehouseLocation?.lat ?? -15.488449898458102,
+      lng: warehouseLocation?.lng ?? 28.251956946590706,
     }
 
     const resolvedLocation = isPickup
       ? { lat: pickupAddress.lat, lng: pickupAddress.lng }
       : {
-          lat: location?.lat ?? Number(cart.metadata?.lat ?? -15.3875),
-          lng: location?.lng ?? Number(cart.metadata?.lng ?? 28.3228),
+          lat: location?.lat ?? Number(cart.metadata?.lat ?? -15.488449898458102),
+          lng: location?.lng ?? Number(cart.metadata?.lng ?? 28.251956946590706),
         }
 
     const shippingAddress = {
@@ -552,8 +561,8 @@ export async function setDeliveryDetails({
             }
           : (cart.metadata?.warehouse_origin || {
               name: "Lusaka Central Warehouse",
-              lat: -15.3875,
-              lng: 28.3228,
+              lat: -15.488449898458102,
+              lng: 28.251956946590706,
             }),
         ...(deviceLocation && {
           device_lat: deviceLocation.lat,

@@ -167,7 +167,31 @@ const medusaConfig = {
           },
         ],
       },
-    }] : [])
+    }] : []),
+    {
+      key: Modules.FULFILLMENT,
+      resolve: '@medusajs/fulfillment',
+      options: {
+        providers: [
+          {
+            resolve: '@medusajs/fulfillment-manual',
+            id: 'manual',
+          },
+          {
+            resolve: './src/modules/yango-fulfillment',
+            id: 'yango-engine',
+            options: {
+              base_fare: process.env.YANGO_BASE_FARE ? Number(process.env.YANGO_BASE_FARE) : 30,
+              per_km_rate: process.env.YANGO_PER_KM_RATE ? Number(process.env.YANGO_PER_KM_RATE) : 8,
+              min_fare: process.env.YANGO_MIN_FARE ? Number(process.env.YANGO_MIN_FARE) : 35,
+              max_radius_km: process.env.YANGO_MAX_RADIUS_KM ? Number(process.env.YANGO_MAX_RADIUS_KM) : 45,
+              road_factor: process.env.YANGO_ROAD_FACTOR ? Number(process.env.YANGO_ROAD_FACTOR) : 1.35,
+              api_key: process.env.GOOGLE_MAPS_API_KEY || process.env.GOOGLE_DISTANCE_MATRIX_API_KEY,
+            },
+          },
+        ],
+      },
+    }
   ],
   plugins: [
     ...(MEILISEARCH_HOST && MEILISEARCH_ADMIN_KEY ? [{

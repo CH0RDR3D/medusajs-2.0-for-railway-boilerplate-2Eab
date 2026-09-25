@@ -4,15 +4,15 @@ import { Modules } from "@medusajs/framework/utils"
 export const DEFAULT_LUSAKA_WAREHOUSE = {
   id: "default_lusaka_warehouse",
   name: "Lusaka Central Warehouse",
-  company: "ShadyStore Logistics Hub",
-  address_1: "Cairo Road / Great North Road",
-  address_2: "Central Commercial District",
+  company: "SYA General Dealers LTD",
+  address_1: "430B Lamasat Complex 2, Makeni-Bonaventure, Linda Road",
+  address_2: "Plot No. F/687/A/1/A/8 Makeni Road",
   city: "Lusaka",
   province: "Lusaka",
   postal_code: "10101",
   country_code: "zm",
-  lat: -15.3875,
-  lng: 28.3228,
+  lat: -15.488449898458102,
+  lng: 28.251956946590706,
   metadata: {},
 }
 

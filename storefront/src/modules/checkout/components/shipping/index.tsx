@@ -8,7 +8,7 @@ import Divider from "@modules/common/components/divider"
 import Radio from "@modules/common/components/radio"
 import ErrorMessage from "@modules/checkout/components/error-message"
 import { useRouter, useSearchParams, usePathname } from "next/navigation"
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { setDeliveryDetails, setShippingMethod } from "@lib/data/cart"
 import { listCartShippingMethods } from "@lib/data/fulfillment"
 import { getStoreLocations } from "@lib/data/locations"
@@ -75,6 +75,17 @@ const Shipping: React.FC<ShippingProps> = ({
     })
   }, [])
 
+  // Memoized warehouse object for location map stability
+  const memoizedWarehouseLocation = useMemo(
+    () => ({
+      lat: warehouse.lat,
+      lng: warehouse.lng,
+      name: warehouse.name,
+      address: warehouse.address_1,
+    }),
+    [warehouse.lat, warehouse.lng, warehouse.name, warehouse.address_1]
+  )
+
   // Check if option is pickup
   const isPickupOption = useCallback((o: HttpTypes.StoreCartShippingOption) => {
     const typeCode = (o as any).type?.code?.toLowerCase()
@@ -107,9 +118,22 @@ const Shipping: React.FC<ShippingProps> = ({
     (method) => method.id === cart.shipping_methods?.at(-1)?.shipping_option_id
   ) || (deliveryMethod === "pickup" ? cart.shipping_methods?.at(-1) : undefined)
 
-  // Real-time delivery estimate calculation
+  // Real-time delivery estimate calculation with coordinate deduplication
+  const lastEstimateCoordsRef = useRef<{ lat: number; lng: number } | null>(null)
+
   const updateDeliveryEstimate = useCallback(
-    async (coords: { lat: number; lng: number }) => {
+    async (coords: { lat: number; lng: number }, force = false) => {
+      if (!force && lastEstimateCoordsRef.current) {
+        const prev = lastEstimateCoordsRef.current
+        if (
+          Math.abs(prev.lat - coords.lat) < 0.0001 &&
+          Math.abs(prev.lng - coords.lng) < 0.0001
+        ) {
+          return
+        }
+      }
+      lastEstimateCoordsRef.current = coords
+
       setIsCalculating(true)
       try {
         const est = await calculateDeliveryEstimate({
@@ -150,7 +174,21 @@ const Shipping: React.FC<ShippingProps> = ({
 
   const setMethod = async (id: string) => {
     setIsLoading(true)
-    const res = await setShippingMethod({ cartId: cart.id, shippingMethodId: id })
+    const payloadData =
+      deliveryMethod === "pickup"
+        ? { is_pickup: true }
+        : {
+            distance_km: estimate?.distance_km ?? 3.5,
+            yango_cost: estimate?.yango_cost ?? 35,
+            lat: deliveryLocation?.lat,
+            lng: deliveryLocation?.lng,
+            breakdown: estimate?.breakdown,
+          }
+    const res = await setShippingMethod({
+      cartId: cart.id,
+      shippingMethodId: id,
+      data: payloadData,
+    })
     if (res && "error" in res && res.error) {
       setError(res.error)
     }
@@ -212,7 +250,11 @@ const Shipping: React.FC<ShippingProps> = ({
       }
 
       if (pickupOption) {
-        await setShippingMethod({ cartId: cart.id, shippingMethodId: pickupOption.id })
+        await setShippingMethod({
+          cartId: cart.id,
+          shippingMethodId: pickupOption.id,
+          data: { is_pickup: true },
+        })
       }
 
       setIsSavingMode(false)
@@ -226,7 +268,7 @@ const Shipping: React.FC<ShippingProps> = ({
     setLocationConfirmed(hasConfirmedLocation)
 
     if (deliveryLocation) {
-      updateDeliveryEstimate(deliveryLocation)
+      updateDeliveryEstimate(deliveryLocation, true)
     }
   }
 
@@ -291,11 +333,19 @@ const Shipping: React.FC<ShippingProps> = ({
         setError(res.error)
       }
 
-      // Auto-assign delivery shipping method if available and none selected
-      if (!selectedShippingMethod && modeShippingMethods && modeShippingMethods.length > 0) {
+      // Auto-assign delivery shipping method if available
+      if (modeShippingMethods && modeShippingMethods.length > 0) {
+        const methodId = selectedShippingMethod?.id || modeShippingMethods[0].id
         await setShippingMethod({
           cartId: cart.id,
-          shippingMethodId: modeShippingMethods[0].id,
+          shippingMethodId: methodId,
+          data: {
+            distance_km: est.distance_km,
+            yango_cost: est.yango_cost,
+            lat: location.lat,
+            lng: location.lng,
+            breakdown: est.breakdown,
+          },
         })
       }
 
@@ -319,7 +369,7 @@ const Shipping: React.FC<ShippingProps> = ({
       return
     }
 
-    const fallbackLocation = { lat: -15.3875, lng: 28.3228 }
+    const fallbackLocation = { lat: -15.488449898458102, lng: 28.251956946590706 }
     setError(null)
     await onResolveLocation(
       fallbackLocation,
@@ -340,10 +390,18 @@ const Shipping: React.FC<ShippingProps> = ({
       return
     }
 
-    if (deliveryMethod === "delivery" && !selectedShippingMethod && modeShippingMethods && modeShippingMethods.length > 0) {
+    if (deliveryMethod === "delivery" && modeShippingMethods && modeShippingMethods.length > 0) {
+      const methodId = selectedShippingMethod?.id || modeShippingMethods[0].id
       await setShippingMethod({
         cartId: cart.id,
-        shippingMethodId: modeShippingMethods[0].id,
+        shippingMethodId: methodId,
+        data: {
+          distance_km: estimate?.distance_km ?? 3.5,
+          yango_cost: estimate?.yango_cost ?? 35,
+          lat: deliveryLocation?.lat,
+          lng: deliveryLocation?.lng,
+          breakdown: estimate?.breakdown,
+        },
       })
     }
 
@@ -370,10 +428,9 @@ const Shipping: React.FC<ShippingProps> = ({
     if (Number.isFinite(savedLat) && Number.isFinite(savedLng) && savedLat !== 0) {
       const coords = { lat: savedLat, lng: savedLng }
       setDeliveryLocation(coords)
-      updateDeliveryEstimate(coords)
+      updateDeliveryEstimate(coords, true)
     } else {
-      // Default estimate from Lusaka central
-      updateDeliveryEstimate(LUSAKA_DEFAULT_ORIGIN)
+      updateDeliveryEstimate(LUSAKA_DEFAULT_ORIGIN, true)
     }
 
     if (isPickup) {
@@ -495,12 +552,7 @@ const Shipping: React.FC<ShippingProps> = ({
               <LocationMap
                 apiKey={mapsKey}
                 location={deliveryLocation}
-                warehouseLocation={{
-                  lat: warehouse.lat,
-                  lng: warehouse.lng,
-                  name: warehouse.name,
-                  address: warehouse.address_1,
-                }}
+                warehouseLocation={memoizedWarehouseLocation}
                 onResolveLocation={onResolveLocation}
                 onLocationChange={onPinDrag}
                 onError={setMapError}
