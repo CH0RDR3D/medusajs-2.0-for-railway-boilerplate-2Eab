@@ -94,7 +94,7 @@ const stats = [
   { value: "5+", label: "Integrated Divisions", sub: "Vehicles, Solar, Auto, Home & Logistics" },
   { value: "100%", label: "Genuine Quality", sub: "Tested & inspected inventory" },
   { value: "24h", label: "Lusaka Delivery", sub: "Fast local courier fulfillment" },
-  { value: "14-Day", label: "Return Guarantee", sub: "Dependable customer assurance" },
+  { value: "7-Day", label: "Return Window", sub: "Exchange or store credit for eligible returns" },
 ]
 
 export default function AboutPage() {

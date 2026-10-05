@@ -28,7 +28,7 @@ export default async function Home(props: {
 
   // Fetch categories, collections and products from Medusa backend
   const categories = await listCategories()
-  const { collections } = await listCollections({ limit: 20 })
+  const { collections } = await listCollections({ limit: 20, fields: "*products" })
   const { response: { products } } = await getProductsList({
     countryCode,
     queryParams: { limit: 100 },

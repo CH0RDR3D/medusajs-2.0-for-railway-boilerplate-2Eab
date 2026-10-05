@@ -63,7 +63,7 @@ export default function ContactView({ data }: ContactViewProps) {
                 <span className="text-amber-500">Get in touch with our team.</span>
               </h1>
               <p className="mt-4 text-sm sm:text-base leading-relaxed text-[var(--text-secondary)] max-w-2xl">
-                Have questions about your recent order, vehicle showroom viewing, solar installation, or warranty? Our Lusaka-based team is ready to assist you.
+                Have a question about a product, order, payment, delivery, or return? Our Lusaka-based team is ready to assist you.
               </p>
               
               <div className="mt-6 flex flex-wrap items-center gap-3">
@@ -92,13 +92,13 @@ export default function ContactView({ data }: ContactViewProps) {
                 <Clock className="h-4 w-4" /> Operating Hours
               </div>
               <p className="text-sm font-bold text-[var(--text-primary)]">
-                Monday - Saturday: 08:00 - 18:00 CAT
+                {contactInfo.businessHours}
               </p>
               <p className="text-xs text-[var(--text-secondary)]">
-                Sunday: 09:00 - 14:00 CAT (Emergency On-Call)
+                Contact us during these hours for shopping and order support.
               </p>
               <div className="pt-3 border-t border-amber-500/15 flex items-center gap-2 text-xs text-emerald-500 font-semibold">
-                <CheckCircle2 className="h-4 w-4" /> Fast response time (within 2 hours)
+                <CheckCircle2 className="h-4 w-4" /> Customer care for SYA Store orders
               </div>
             </div>
           </div>
@@ -205,7 +205,7 @@ export default function ContactView({ data }: ContactViewProps) {
                       <option value="Returns & Exchanges">Returns & Exchanges</option>
                       <option value="Payments & Lenco">Payments & Lenco Mobile Money</option>
                       <option value="Solar Power Consultation">Solar Power Consultation</option>
-                      <option value="Vehicle Showroom & Garage">Vehicle Showroom & Garage</option>
+                      <option value="Products & Shopping">Products & Shopping</option>
                       <option value="General Inquiries">General Inquiries</option>
                     </select>
                   </div>
@@ -298,7 +298,7 @@ export default function ContactView({ data }: ContactViewProps) {
                 </div>
                 <div>
                   <h3 className="text-sm font-bold text-[var(--text-primary)]">Makeni Complex</h3>
-                  <p className="text-xs text-[var(--text-muted)]">Showroom, Service Center & Store Pickup</p>
+                  <p className="text-xs text-[var(--text-muted)]">SYA Store and pickup point</p>
                 </div>
               </div>
 
@@ -319,7 +319,7 @@ export default function ContactView({ data }: ContactViewProps) {
                   href="/returns"
                   className="text-xs font-semibold text-amber-500 hover:underline flex items-center gap-1"
                 >
-                  <span>Read 14-Day Returns Policy</span>
+                  <span>Read 7-Day Returns Policy</span>
                   <ArrowRight className="h-3 w-3" />
                 </LocalizedClientLink>
               </div>

@@ -17,7 +17,7 @@ import {
   RotateCcw,
   CreditCard,
   Truck,
-  Wrench,
+  ShoppingBag,
   Sun,
   Search,
   ExternalLink,
@@ -43,7 +43,7 @@ const QUICK_TOPICS = [
   {
     id: "returns",
     title: "Returns & Refunds",
-    description: "Return defective items within 14 days or request replacement",
+    description: "Request an eligible return within 7 days for exchange or store credit",
     icon: RotateCcw,
     action: "View Policy",
     targetCategory: "Returns & Warranty",
@@ -51,7 +51,7 @@ const QUICK_TOPICS = [
   {
     id: "payments",
     title: "Payments & Lenco",
-    description: "Mobile Money (Airtel, MTN, Zamtel) and card transaction help",
+    description: "Help with Lenco online payments and cash orders",
     icon: CreditCard,
     action: "Payment FAQs",
     targetCategory: "Payments & Lenco",
@@ -59,18 +59,18 @@ const QUICK_TOPICS = [
   {
     id: "delivery",
     title: "Delivery & Store Pickup",
-    description: "Lusaka 24h express shipping and Makeni showroom pickup",
+    description: "Delivery within Zambia, with estimates shown at checkout",
     icon: Truck,
     action: "Delivery Info",
     targetCategory: "Orders & Delivery",
   },
   {
-    id: "garage",
-    title: "Auto Garage & Vehicles",
-    description: "Book showroom test drives, vehicle diagnostics, or car wash",
-    icon: Wrench,
-    action: "Garage Info",
-    targetCategory: "Vehicles & Auto Garage",
+    id: "products",
+    title: "Products & Shopping",
+    description: "Browse the catalog and get help choosing products",
+    icon: ShoppingBag,
+    action: "Shopping Help",
+    targetCategory: "Products & Shopping",
   },
   {
     id: "solar",
@@ -209,7 +209,7 @@ export default function CustomerCareView({
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Type your question or keyword (e.g. tracking, Lenco payment, Makeni pickup, solar)..."
+                placeholder="Search products, orders, delivery, payments, or returns..."
                 className="w-full pl-12 pr-4 py-3.5 text-sm rounded-xl border border-[var(--surface-border)] bg-[var(--bg-base)] text-[var(--text-primary)] placeholder-[var(--text-muted)] shadow-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition"
                 aria-label="Search help topics"
               />
@@ -309,7 +309,7 @@ export default function CustomerCareView({
                 Frequently Asked Questions
               </h2>
               <p className="text-xs md:text-sm text-[var(--text-secondary)] mt-1">
-                Answers to common inquiries regarding shopping, logistics, solar solutions, and auto care.
+                Answers about products, orders, delivery, payments, and returns.
               </p>
             </div>
 
@@ -395,7 +395,7 @@ export default function CustomerCareView({
                 Reach out anytime
               </h2>
               <p className="text-xs sm:text-sm text-[var(--text-secondary)] mt-2 leading-relaxed">
-                Our support desk in Lusaka is available to answer questions, process orders, and arrange vehicle or solar consultations.
+                Our Lusaka team can help with product questions, orders, delivery, payments, and returns.
               </p>
             </div>
 
@@ -446,13 +446,13 @@ export default function CustomerCareView({
                   <MapPin className="h-5 w-5" />
                 </div>
                 <div>
-                  <h3 className="text-xs uppercase tracking-wider text-[var(--text-muted)] font-bold">Visit Showroom & Garage</h3>
+                  <h3 className="text-xs uppercase tracking-wider text-[var(--text-muted)] font-bold">Visit SYA Store</h3>
                   <p className="mt-1 text-sm font-bold text-[var(--text-primary)]">{contactInfo.address}</p>
                   <p className="text-xs text-[var(--text-secondary)] mt-0.5">
                     {contactInfo.city}, {contactInfo.country}
                   </p>
                   <p className="text-[11px] text-amber-500 font-semibold mt-2">
-                    Free Store Pickup & Garage Diagnostics Available
+                    Ask Customer Care about Store Pickup availability
                   </p>
                 </div>
               </div>
@@ -524,8 +524,8 @@ export default function CustomerCareView({
                         <option value="Order & Delivery Status">Order & Delivery Status</option>
                         <option value="Payment & Lenco">Payment & Lenco Question</option>
                         <option value="Returns & Warranty">Returns & Warranty</option>
-                        <option value="Vehicle / Garage Service">Vehicle / Garage Service Booking</option>
-                        <option value="Solar Installation Quote">Solar Installation Quote</option>
+                        <option value="Products & Shopping">Product Question or Availability</option>
+                        <option value="Solar & Hardware">Solar & Hardware Product Question</option>
                       </select>
                     </div>
 

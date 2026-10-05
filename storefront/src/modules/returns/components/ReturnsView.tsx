@@ -41,26 +41,26 @@ export default function ReturnsView({ data }: ReturnsViewProps) {
     {
       num: "01",
       title: "Initiate Request",
-      desc: "Submit your order number and reason online, call our support desk, or WhatsApp us within 14 days of delivery.",
+      desc: "Request approval by phone, WhatsApp, or email within 7 days of delivery before sending an item back.",
       icon: RotateCcw,
     },
     {
       num: "02",
       title: "Package Securely",
-      desc: "Keep items in original condition with manufacturer packaging, manuals, accessories, and warranty cards intact.",
+      desc: "Items must be unused, in their original packaging, and accompanied by proof of purchase.",
       icon: Package,
     },
     {
       num: "03",
       title: "Handover or Drop-off",
-      desc: "Hand over to our Lusaka courier during pickup, or drop off free of charge at our Makeni Road showroom counter.",
+      desc: "After approval, follow Customer Care instructions for returning the item to SYA Store.",
       icon: Truck,
     },
     {
       num: "04",
-      title: "Fast Refund / Exchange",
-      desc: "Once inspected, your refund is credited via Mobile Money (Airtel, MTN, Zamtel) or card within 3-5 business days.",
-      icon: CreditCard,
+      title: "Exchange or Store Credit",
+      desc: "Eligible returns are resolved by exchange or store credit after inspection. Cash refunds are not provided.",
+      icon: RotateCcw,
     },
   ]
 
@@ -69,11 +69,6 @@ export default function ReturnsView({ data }: ReturnsViewProps) {
       category: "Solar Equipment & Inverters",
       period: "1 to 5 Years Warranty",
       coverage: "Tier-1 solar panels, hybrid inverters, and lithium battery cells against manufacturing defects.",
-    },
-    {
-      category: "Vehicles & Auto Garage Work",
-      period: "Service & Pre-Sale Guarantee",
-      coverage: "Comprehensive mechanical inspection, certified diagnostic repairs, and verified pre-sale condition.",
     },
     {
       category: "Household & Electrical Hardware",
@@ -94,7 +89,7 @@ export default function ReturnsView({ data }: ReturnsViewProps) {
                 <ShieldCheck className="h-3.5 w-3.5" /> Dependable Customer Assurance
               </div>
               <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black leading-tight tracking-tight text-[var(--text-primary)]">
-                14-Day Returns & <br />
+                7-Day Returns & <br />
                 <span className="text-amber-500">Exchanges Policy</span>
               </h1>
               <p className="mt-4 text-sm sm:text-base leading-relaxed text-[var(--text-secondary)] max-w-2xl">
@@ -211,15 +206,15 @@ export default function ReturnsView({ data }: ReturnsViewProps) {
             <div className="space-y-3">
               <div className="flex items-start gap-3 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs text-[var(--text-primary)]">
                 <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
-                <span><strong>Eligible:</strong> Items with manufacturing defects or physical transit damage reported within 14 days.</span>
+                <span><strong>Eligible:</strong> Return requests submitted within 7 days of delivery, subject to inspection and approval.</span>
               </div>
               <div className="flex items-start gap-3 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs text-[var(--text-primary)]">
                 <CheckCircle2 className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
-                <span><strong>Eligible:</strong> Unopened merchandise with intact original manufacturer seals, labels, and packaging.</span>
+                <span><strong>Required:</strong> Items must be unused, in original packaging, and accompanied by proof of purchase.</span>
               </div>
               <div className="flex items-start gap-3 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-xs text-[var(--text-primary)]">
                 <XCircle className="h-4 w-4 text-red-500 shrink-0 mt-0.5" />
-                <span><strong>Ineligible:</strong> Consumable chemicals, customized/tailored vehicle parts, and clearance final-sale items.</span>
+                <span><strong>May be excluded:</strong> Clearance items, consumables, and solar batteries.</span>
               </div>
               <div className="flex items-start gap-3 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-xs text-[var(--text-primary)]">
                 <XCircle className="h-4 w-4 text-red-500 shrink-0 mt-0.5" />

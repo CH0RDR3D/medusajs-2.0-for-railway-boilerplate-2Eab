@@ -40,7 +40,6 @@ const Shipping: React.FC<ShippingProps> = ({
   const [deliveryLocation, setDeliveryLocation] = useState<{ lat: number; lng: number } | null>(null)
   const [warehouse, setWarehouse] = useState<StoreLocation>(DEFAULT_WAREHOUSE_LOCATION)
   const [estimate, setEstimate] = useState<DeliveryEstimateResult | null>(null)
-  const [pickupDistanceInfo, setPickupDistanceInfo] = useState<{ distance_km: number; duration_text: string } | null>(null)
   const [isCalculating, setIsCalculating] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [isSavingMode, setIsSavingMode] = useState(false)
@@ -142,12 +141,6 @@ const Shipping: React.FC<ShippingProps> = ({
           apiKey: mapsKey,
         })
         setEstimate(est)
-
-        // Also compute user-to-store distance for pickup card reference
-        setPickupDistanceInfo({
-          distance_km: est.distance_km,
-          duration_text: est.duration_text,
-        })
       } catch (err) {
         // Fallback calculation
         const fee = computeYangoFee(3.5)
@@ -804,34 +797,6 @@ const Shipping: React.FC<ShippingProps> = ({
                     {warehouse.address_1}
                     {warehouse.address_2 ? `, ${warehouse.address_2}` : ""}, {warehouse.city}, {warehouse.country_code.toUpperCase()}
                   </Text>
-                </div>
-                <span className="text-base font-bold text-emerald-700">0.00 {currencyCode}</span>
-              </div>
-
-              {/* Distance & Driving time indicator */}
-              <div className="grid grid-cols-2 gap-3 pt-2 text-xs">
-                <div className="bg-white/80 p-2.5 rounded-xl border border-emerald-100 flex items-center gap-2">
-                  <span className="text-base">📍</span>
-                  <div>
-                    <span className="text-ui-fg-muted text-[10px] uppercase font-semibold">
-                      Distance from You
-                    </span>
-                    <p className="font-bold text-ui-fg-base">
-                      {pickupDistanceInfo ? `${pickupDistanceInfo.distance_km} km` : "Central Lusaka"}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="bg-white/80 p-2.5 rounded-xl border border-emerald-100 flex items-center gap-2">
-                  <span className="text-base">⏱️</span>
-                  <div>
-                    <span className="text-ui-fg-muted text-[10px] uppercase font-semibold">
-                      Driving Time
-                    </span>
-                    <p className="font-bold text-ui-fg-base">
-                      {pickupDistanceInfo ? `~${pickupDistanceInfo.duration_text}` : "~15 mins"}
-                    </p>
-                  </div>
                 </div>
               </div>
 

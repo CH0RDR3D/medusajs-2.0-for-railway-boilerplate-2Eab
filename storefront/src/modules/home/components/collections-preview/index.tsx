@@ -279,19 +279,18 @@ export default function CollectionsPreview({
 
     if (collections && collections.length > 0) {
       collections.forEach((col, idx) => {
+        // Strictly filter products that belong ONLY to this specific collection
         const colProducts = products.filter(
           (p) =>
             p.collection_id === col.id ||
-            p.collection?.handle === col.handle ||
-            col.products?.some((cp) => cp.id === p.id)
+            p.collection?.id === col.id ||
+            (col.handle && p.collection?.handle === col.handle) ||
+            (Array.isArray(col.products) && col.products.some((cp) => cp.id === p.id))
         )
 
-        const finalProducts =
-          colProducts.length > 0
-            ? colProducts
-            : products.slice(idx * 4, idx * 4 + 8)
-
-        if (finalProducts.length > 0) {
+        // Only include the collection if it actually has products belonging to it.
+        // Never backfill with products from other collections/categories.
+        if (colProducts.length > 0) {
           list.push({
             id: col.id,
             title: col.title,
@@ -306,14 +305,14 @@ export default function CollectionsPreview({
                   ? "Trending Hub"
                   : "Curated Collection",
             accentColor: colorAccents[idx % colorAccents.length],
-            products: finalProducts,
+            products: colProducts,
           })
         }
       })
     }
 
-    // Fallback smart collections if none configured
-    if (list.length < 2 && products.length > 0) {
+    // Fallback smart collection only if no collections are configured in store at all
+    if (list.length === 0 && (!collections || collections.length === 0) && products.length > 0) {
       list.push({
         id: "smart-trending",
         title: "Trending Essentials",
@@ -324,37 +323,6 @@ export default function CollectionsPreview({
         accentColor: "amber",
         products: products.slice(0, 10),
       })
-
-      if (products.length > 4) {
-        list.push({
-          id: "smart-arrivals",
-          title: "New Season Arrivals",
-          handle: "new-arrivals",
-          description:
-            "Fresh arrivals and newly listed products curated for your daily lifestyle.",
-          badgeText: "Just Landed",
-          accentColor: "cyan",
-          products: products.slice(4, 14),
-        })
-      }
-
-      const dealItems = products.filter((p) => {
-        const calc = p.variants?.[0]?.calculated_price?.calculated_amount ?? 0
-        const orig = p.variants?.[0]?.calculated_price?.original_amount ?? 0
-        return orig > calc
-      })
-      if (dealItems.length > 0) {
-        list.push({
-          id: "smart-deals",
-          title: "Hot Value Deals",
-          handle: "deals",
-          description:
-            "Unbeatable discounts and promotional prices with instant checkout.",
-          badgeText: "Special Offers",
-          accentColor: "emerald",
-          products: dealItems.slice(0, 10),
-        })
-      }
     }
 
     return list

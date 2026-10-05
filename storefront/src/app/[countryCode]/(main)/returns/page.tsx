@@ -3,9 +3,9 @@ import ReturnsView from "@modules/returns/components/ReturnsView"
 import { getCustomerServiceData } from "@lib/data/customer-service"
 
 export const metadata: Metadata = {
-  title: "Returns & Exchanges Policy | 14-Day Guarantee | SYA Store",
+  title: "Returns & Exchanges Policy | 7-Day Return Window | SYA Store",
   description:
-    "Learn about our 14-day return policy, warranty coverage, defective item replacement process, and submit a return inquiry.",
+    "Review SYA Store's 7-day return window, eligibility requirements, exchange and store credit policy, and how to request approval.",
 }
 
 /**

@@ -1,6 +1,6 @@
 export interface FAQItem {
   id: string
-  category: "Orders & Delivery" | "Payments & Lenco" | "Returns & Warranty" | "Vehicles & Auto Garage" | "Solar & Hardware" | "General & Account"
+  category: "Products & Shopping" | "Orders & Delivery" | "Payments & Lenco" | "Returns & Warranty" | "Solar & Hardware" | "General & Account"
   question: string
   answer: string
 }
@@ -32,45 +32,51 @@ export interface CustomerServiceData {
 
 export const customerServiceData: CustomerServiceData = {
   contactInfo: {
-    email: "info@syastore.com",
-    phone: "+260-978-883-420",
-    phoneSecondary: "+260-966-666-608",
-    whatsapp: "+260978883420",
+    email: "info@syatore.com",
+    phone: "+260976666611",
+    phoneSecondary: "",
+    whatsapp: "+260976666611",
     address: "Plot No. F/687/A/1/A/8, Makeni Road",
     city: "Lusaka",
     country: "Zambia",
-    businessHours: "Monday - Saturday: 08:00 - 18:00 CAT | Sunday: 09:00 - 14:00 CAT",
+    businessHours: "Monday - Friday: 08:00 - 17:00 CAT",
   },
   faqs: [
     {
+      id: "faq-10",
+      category: "Products & Shopping",
+      question: "How can I find a product or check whether it is available?",
+      answer: "Browse the SYA Store catalog by category or search by product name. Product details and available options are shown on each listing. Contact Customer Care if you need help before placing an order.",
+    },
+    {
       id: "faq-1",
       category: "Orders & Delivery",
-      question: "How long does delivery take in Lusaka and across Zambia?",
-      answer: "Orders within Lusaka are fulfilled within 24 hours. For other provinces (Copperbelt, Livingstone, Ndola, Kitwe, etc.), delivery typically takes 2 to 4 business days via our secure logistics partners.",
+      question: "Where does SYA Store deliver, and when will my order arrive?",
+      answer: "Delivery is available within Zambia, with a focus on Lusaka. Your estimated delivery time is provided at checkout. We will notify you promptly if an unforeseen delay affects your order.",
     },
     {
       id: "faq-2",
       category: "Orders & Delivery",
       question: "Can I collect my items directly from your Makeni showroom?",
-      answer: "Yes! You can choose 'Store Pickup' during checkout. Your items will be prepared and ready for collection at our Makeni Road facility with zero shipping fees.",
+      answer: "Where available, select Store Pickup at checkout. We will contact you when your order is ready for collection at our Makeni Road location.",
     },
     {
       id: "faq-3",
       category: "Payments & Lenco",
       question: "What payment options are available at checkout?",
-      answer: "We accept Airtel Money, MTN Mobile Money, and Zamtel Kwacha via our integrated Lenco payment gateway, as well as Visa and Mastercard.",
+      answer: "We accept online payments through Lenco and cash. Payment must be made in full before your order is delivered. Available options will be confirmed when you place your order.",
     },
     {
       id: "faq-4",
       category: "Payments & Lenco",
       question: "Is paying online with Lenco secure?",
-      answer: "Yes. All transactions through Lenco are encrypted with bank-grade SSL security and verified directly with your mobile network provider or card issuer.",
+      answer: "Lenco processes online payments. Follow the secure payment steps shown at checkout and contact Customer Care if you need help with a transaction.",
     },
     {
       id: "faq-5",
       category: "Returns & Warranty",
       question: "What is the return policy for SYA Store items?",
-      answer: "We offer a 14-day return window for items in their original, unused condition with packaging intact. You can drop off items at our Makeni showroom or request a courier pickup.",
+      answer: "You may request a return within 7 days of delivery. Items must be unused, in their original packaging, and accompanied by proof of purchase. Approved returns are eligible for an exchange or store credit only; cash refunds are not provided. Clearance items, consumables, and solar batteries may be excluded.",
     },
     {
       id: "faq-6",
@@ -80,9 +86,9 @@ export const customerServiceData: CustomerServiceData = {
     },
     {
       id: "faq-7",
-      category: "Vehicles & Auto Garage",
-      question: "How do I book auto repairs or a vehicle showroom viewing?",
-      answer: "You can book directly by calling our service desk (+260-978-883-420), messaging us on WhatsApp, or visiting our Makeni Road garage for vehicle inspection, diagnostics, and car wash services.",
+      category: "General & Account",
+      question: "How do I raise a concern about my order or shopping experience?",
+      answer: "Contact SYA Customer Care by phone, WhatsApp, or email with your order number and details of the issue. Complaints are handled in line with applicable Zambian consumer protection requirements.",
     },
     {
       id: "faq-8",
@@ -99,34 +105,35 @@ export const customerServiceData: CustomerServiceData = {
   ],
   returnsPolicy: {
     title: "Returns & Refunds Policy",
-    subtitle: "Dependable 14-day return assurance for our valued customers",
+    subtitle: "Clear, product-focused support for eligible returns within 7 days",
     highlights: [
-      "14 days eligibility from order delivery date",
-      "Original packaging and labels required",
-      "Free in-store return drop-off at Makeni showroom",
-      "Mobile Money & Card refunds processed within 3-5 business days",
+      "Request a return within 7 days of delivery",
+      "Items must be unused and in original packaging",
+      "Proof of purchase is required; approval is needed before return",
+      "Exchanges or store credit only; no cash refunds",
+      "Clearance items, consumables, and solar batteries may be excluded",
     ],
     content: [
-      "We want you to be completely satisfied with your purchase. If a product does not meet your expectations, you may return it within 14 calendar days of delivery.",
-      "Returned items must be unused, in the same condition that you received them, and in original packaging with intact seals.",
-      "Non-returnable items include personalized items, consumable chemicals, and final clearance items.",
-      "To initiate a return, contact our support team or bring your item and receipt to Plot No. F/687/A/1/A/8, Makeni Road, Lusaka.",
+      "You may request a return within 7 days of delivery. Returned products must be unused, in their original packaging, and accompanied by proof of purchase.",
+      "Some products may be excluded from returns, including clearance items, consumables, and solar batteries. Contact Customer Care to confirm eligibility before sending an item back.",
+      "Approved returns are resolved by exchange or store credit only. SYA Store does not provide cash refunds under this policy.",
+      "Returns must be approved before items are sent back. Start a request by phone or WhatsApp at +260976666611, or email info@syatore.com.",
     ],
   },
   deliveryPolicy: {
     title: "Delivery Policy",
     subtitle: "Reliable shipping across Lusaka and all provinces in Zambia",
     highlights: [
-      "Same-day / 24h delivery for Lusaka urban areas",
-      "2 - 4 business days for nationwide provincial delivery",
-      "Complimentary free store pickup at Makeni Road",
-      "Real-time SMS & email dispatch notifications",
+      "Delivery available within Zambia, with a focus on Lusaka",
+      "Estimated delivery time is provided at checkout",
+      "Pickup availability is shown during checkout",
+      "Customers are responsible for providing a correct address and being available to receive orders",
     ],
     content: [
-      "We partner with dependable logistics couriers to ensure your order arrives safely and promptly.",
-      "Delivery fees are calculated dynamically based on your coordinates and delivery address.",
-      "Store Pick-Up: You will receive an SMS/WhatsApp alert when your order is ready for pickup at our Makeni Road facility.",
-      "Always inspect package contents upon handover. If package seal appears damaged, please notify the courier driver immediately.",
+      "SYA Store and its delivery carriers share responsibility for handling orders safely. Delivery fees and estimated timelines are shown during checkout.",
+      "We will notify customers promptly about delays caused by circumstances such as traffic, weather, or courier issues.",
+      "Customers are responsible for providing an accurate delivery address and collecting or receiving their order. Additional responsibility may apply where delivery fails because of incorrect details or failure to collect.",
+      "Where Store Pickup is available, we will contact you when your order is ready at our Makeni Road location.",
     ],
   },
 }
